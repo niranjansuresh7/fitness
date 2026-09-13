@@ -16,7 +16,8 @@ class LogRepository {
         foodId: row['food_id'] as int?,
         foodName: row['food_name'] as String? ?? '',
         grams: (row['grams'] as num?)?.toDouble() ?? 0.0,
-        per100gSnapshot: NutritionFacts.decode(row['nutrients'] as String? ?? ''),
+        per100gSnapshot:
+            NutritionFacts.decode(row['nutrients'] as String? ?? ''),
         meal: MealType.fromName(row['meal'] as String?),
         loggedAt: DateTime.tryParse(row['logged_at'] as String? ?? '') ??
             DateTime.now(),
@@ -59,7 +60,8 @@ class LogRepository {
     return rows.map(_fromRow).toList(growable: false);
   }
 
-  Future<int> insert(LogEntry entry) => _db.insert('log_entries', _toRow(entry));
+  Future<int> insert(LogEntry entry) =>
+      _db.insert('log_entries', _toRow(entry));
 
   Future<void> update(LogEntry entry) async {
     final int? id = entry.id;

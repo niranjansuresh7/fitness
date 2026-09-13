@@ -38,7 +38,8 @@ class WaterRepository {
     return rows.map(_fromRow).toList(growable: false);
   }
 
-  Future<int> add(WaterEntry entry) => _db.insert('water_entries', <String, Object?>{
+  Future<int> add(WaterEntry entry) =>
+      _db.insert('water_entries', <String, Object?>{
         'volume_ml': entry.volumeMl,
         'logged_at': entry.loggedAt.toIso8601String(),
         'day': dayKey(entry.loggedAt),
@@ -46,7 +47,8 @@ class WaterRepository {
       });
 
   Future<void> delete(int id) async {
-    await _db.delete('water_entries', where: 'id = ?', whereArgs: <Object?>[id]);
+    await _db
+        .delete('water_entries', where: 'id = ?', whereArgs: <Object?>[id]);
   }
 
   /// Total millilitres for a day, computed in SQL for the widget/summary path.

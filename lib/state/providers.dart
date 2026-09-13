@@ -20,17 +20,19 @@ import '../services/notification_service.dart';
 /// bootstrapping: by the time anything renders, the database is open and the
 /// profile is loaded.
 final Provider<AppDatabase> appDatabaseProvider = Provider<AppDatabase>(
-  (Ref ref) => throw UnimplementedError('appDatabaseProvider must be overridden'),
+  (Ref ref) =>
+      throw UnimplementedError('appDatabaseProvider must be overridden'),
 );
 
 final Provider<NotificationService> notificationServiceProvider =
     Provider<NotificationService>(
-  (Ref ref) =>
-      throw UnimplementedError('notificationServiceProvider must be overridden'),
+  (Ref ref) => throw UnimplementedError(
+      'notificationServiceProvider must be overridden'),
 );
 
 final Provider<UserProfile> initialProfileProvider = Provider<UserProfile>(
-  (Ref ref) => throw UnimplementedError('initialProfileProvider must be overridden'),
+  (Ref ref) =>
+      throw UnimplementedError('initialProfileProvider must be overridden'),
 );
 
 // --- Repositories ----------------------------------------------------------
@@ -61,14 +63,31 @@ class ProfileNotifier extends Notifier<UserProfile> {
   /// Reminders are rescheduled on every save because almost every field can
   /// change them: weight and climate change the target, wake and sleep change
   /// the window, and the interval changes the spacing.
+  ///
+  /// Nothing is invalidated here on purpose. [daySummaryProvider] and
+  /// [historyProvider] already watch this provider, so they recompute on their
+  /// own when [state] changes; invalidating them from inside the provider they
+  /// depend on is a circular dependency and throws.
   Future<void> save(UserProfile profile) async {
     state = profile;
     await ref.read(settingsRepositoryProvider).saveProfile(profile);
     await ref
         .read(notificationServiceProvider)
         .rescheduleWaterReminders(profile);
-    ref.invalidate(daySummaryProvider);
-    ref.invalidate(historyProvider);
+  }
+
+  /// Re-read the stored profile and adopt it.
+  ///
+  /// Needed after a backup restore, which writes straight to the database:
+  /// without this the screen would keep showing the profile from before the
+  /// restore until the app was relaunched.
+  Future<void> reload() async {
+    final UserProfile stored =
+        await ref.read(settingsRepositoryProvider).loadProfile();
+    state = stored;
+    await ref
+        .read(notificationServiceProvider)
+        .rescheduleWaterReminders(stored);
   }
 }
 
@@ -121,7 +140,8 @@ final StateProvider<String> foodSearchProvider =
 
 final FutureProviderFamily<List<FoodItem>, String> foodListProvider =
     FutureProvider.family<List<FoodItem>, String>(
-  (Ref ref, String query) => ref.watch(foodRepositoryProvider).all(query: query),
+  (Ref ref, String query) =>
+      ref.watch(foodRepositoryProvider).all(query: query),
 );
 
 final FutureProvider<List<DrinkPreset>> drinkPresetsProvider =
@@ -153,7 +173,8 @@ class TrackerActions {
     _ref.invalidate(foodListProvider);
   }
 
-  Future<void> addWater(double volumeMl, {String label = '', DateTime? at}) async {
+  Future<void> addWater(double volumeMl,
+      {String label = '', DateTime? at}) async {
     if (volumeMl <= 0) return;
     await _ref.read(waterRepositoryProvider).add(WaterEntry(
           volumeMl: volumeMl,
@@ -232,7 +253,8 @@ final FutureProvider<List<DaySummary>> historyProvider =
     FutureProvider<List<DaySummary>>((Ref ref) async {
   final UserProfile profile = ref.watch(profileProvider);
   final DateTime today = startOfDay(DateTime.now());
-  final DateTime from = today.subtract(const Duration(days: historyDayCount - 1));
+  final DateTime from =
+      today.subtract(const Duration(days: historyDayCount - 1));
 
   final List<LogEntry> entries =
       await ref.watch(logRepositoryProvider).between(from, today);
@@ -244,7 +266,8 @@ final FutureProvider<List<DaySummary>> historyProvider =
     entriesByDay.putIfAbsent(dayKey(e.loggedAt), () => <LogEntry>[]).add(e);
   }
 
-  final Map<String, List<WaterEntry>> watersByDay = <String, List<WaterEntry>>{};
+  final Map<String, List<WaterEntry>> watersByDay =
+      <String, List<WaterEntry>>{};
   for (final WaterEntry w in waters) {
     watersByDay.putIfAbsent(dayKey(w.loggedAt), () => <WaterEntry>[]).add(w);
   }

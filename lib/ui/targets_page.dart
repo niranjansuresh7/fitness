@@ -114,9 +114,8 @@ class _NutrientDetailSheet extends ConsumerWidget {
                   ?.copyWith(fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: 14),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: <Widget>[
+            StatRow(
+              tiles: <Widget>[
                 StatTile(
                   label: 'Today',
                   value: Fmt.amount(nutrient, consumed),
@@ -214,8 +213,8 @@ class _NutrientDetailSheet extends ConsumerWidget {
             child: const Text('Cancel'),
           ),
           FilledButton(
-            onPressed: () => Navigator.of(ctx)
-                .pop(double.tryParse(controller.text.trim())),
+            onPressed: () =>
+                Navigator.of(ctx).pop(double.tryParse(controller.text.trim())),
             child: const Text('Save'),
           ),
         ],
@@ -227,9 +226,11 @@ class _NutrientDetailSheet extends ConsumerWidget {
     if (!context.mounted) return;
 
     final UserProfile p = ref.read(profileProvider);
-    final Map<Nutrient, double> next =
-        Map<Nutrient, double>.of(p.customTargets)..[nutrient] = value;
-    await ref.read(profileProvider.notifier).save(p.copyWith(customTargets: next));
+    final Map<Nutrient, double> next = Map<Nutrient, double>.of(p.customTargets)
+      ..[nutrient] = value;
+    await ref
+        .read(profileProvider.notifier)
+        .save(p.copyWith(customTargets: next));
 
     if (context.mounted) Navigator.of(context).pop();
   }

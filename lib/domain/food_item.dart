@@ -115,13 +115,14 @@ class FoodItem {
     if (f[Nutrient.water] > 100.5) {
       problems.add('Water content exceeds 100 g per 100 g.');
     }
-    final double? ratio =
-        f[Nutrient.energy] < _energyCheckFloorKcal ? null : f.energyDiscrepancyRatio;
+    final double? ratio = f[Nutrient.energy] < _energyCheckFloorKcal
+        ? null
+        : f.energyDiscrepancyRatio;
     if (ratio != null && ratio.abs() > 0.10) {
-      problems.add(
-          'Stated energy is ${(ratio * 100).abs().toStringAsFixed(0)}% '
-          '${ratio > 0 ? 'higher' : 'lower'} than its macros imply '
-          '(${f.atwaterEnergyKcal.round()} kcal). Check for a typo.');
+      problems
+          .add('Stated energy is ${(ratio * 100).abs().toStringAsFixed(0)}% '
+              '${ratio > 0 ? 'higher' : 'lower'} than its macros imply '
+              '(${f.atwaterEnergyKcal.round()} kcal). Check for a typo.');
     }
     return problems;
   }
@@ -153,7 +154,8 @@ class FoodItem {
       servingName: servingName ?? this.servingName,
       servingGrams:
           clearServingGrams ? null : (servingGrams ?? this.servingGrams),
-      densityGPerMl: clearDensity ? null : (densityGPerMl ?? this.densityGPerMl),
+      densityGPerMl:
+          clearDensity ? null : (densityGPerMl ?? this.densityGPerMl),
       isLiquid: isLiquid ?? this.isLiquid,
       tags: tags ?? this.tags,
       favorite: favorite ?? this.favorite,

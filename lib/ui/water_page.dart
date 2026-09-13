@@ -55,39 +55,44 @@ class _WaterBody extends ConsumerWidget {
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
       children: <Widget>[
-        _RingCard(day: day, isToday: isToday, now: now),
-        const SizedBox(height: 14),
-        SectionCard(
-          title: 'Add a drink',
-          child: Column(
+        _RingCard(
+          day: day,
+          isToday: isToday,
+          now: now,
+          // Kept in the same card as the ring: on a phone these would not
+          // otherwise share a screen, and checking your progress should not
+          // mean scrolling away from the button that changes it.
+          actions: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
               presets.when(
-                loading: () => const SizedBox(height: 50),
+                loading: () => const SizedBox(height: 86),
                 error: (Object e, StackTrace st) => Text('$e'),
-                data: (List<DrinkPreset> list) => Wrap(
-                  spacing: 10,
-                  runSpacing: 10,
+                data: (List<DrinkPreset> list) => Row(
                   children: <Widget>[
-                    for (final DrinkPreset p in list)
-                      _PresetChip(
-                        preset: p,
-                        onTap: () => ref.read(actionsProvider).addWater(
-                              p.volumeMl,
-                              label: p.label,
-                              at: _logTime(),
-                            ),
+                    for (int i = 0; i < list.length; i++) ...<Widget>[
+                      if (i > 0) const SizedBox(width: 8),
+                      Expanded(
+                        child: _PresetChip(
+                          preset: list[i],
+                          onTap: () => ref.read(actionsProvider).addWater(
+                                list[i].volumeMl,
+                                label: list[i].label,
+                                at: _logTime(),
+                              ),
+                        ),
                       ),
+                    ],
                   ],
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 10),
               OutlinedButton.icon(
                 onPressed: () => _askCustomAmount(context, ref),
                 icon: const Icon(Icons.edit_outlined),
                 label: const Text('Custom amount'),
                 style: OutlinedButton.styleFrom(
-                  minimumSize: const Size(0, 48),
+                  minimumSize: const Size(0, 46),
                 ),
               ),
             ],
@@ -139,11 +144,17 @@ class _WaterBody extends ConsumerWidget {
 }
 
 class _RingCard extends StatelessWidget {
-  const _RingCard({required this.day, required this.isToday, required this.now});
+  const _RingCard({
+    required this.day,
+    required this.isToday,
+    required this.now,
+    required this.actions,
+  });
 
   final DaySummary day;
   final bool isToday;
   final DateTime now;
+  final Widget actions;
 
   @override
   Widget build(BuildContext context) {
@@ -156,14 +167,14 @@ class _RingCard extends StatelessWidget {
     final bool behind = pace < -100;
 
     return SectionCard(
-      padding: const EdgeInsets.fromLTRB(16, 20, 16, 18),
+      padding: const EdgeInsets.fromLTRB(16, 18, 16, 16),
       child: Column(
         children: <Widget>[
           ProgressRing(
             progress: day.waterProgress,
             color: AppTheme.water,
-            size: 200,
-            strokeWidth: 16,
+            size: 176,
+            strokeWidth: 15,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
@@ -192,7 +203,7 @@ class _RingCard extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: 14),
           if (day.waterGoalMet)
             _Banner(
               icon: Icons.check_circle,
@@ -211,9 +222,7 @@ class _RingCard extends StatelessWidget {
                 if (showPace) ...<Widget>[
                   const SizedBox(height: 10),
                   _Banner(
-                    icon: behind
-                        ? Icons.trending_down
-                        : Icons.trending_up,
+                    icon: behind ? Icons.trending_down : Icons.trending_up,
                     color: behind ? AppTheme.warning : AppTheme.good,
                     text: behind
                         ? '${Fmt.volume(-pace)} behind schedule'
@@ -234,6 +243,10 @@ class _RingCard extends StatelessWidget {
                 ],
               ],
             ),
+          const SizedBox(height: 16),
+          const Divider(height: 1),
+          const SizedBox(height: 16),
+          actions,
         ],
       ),
     );
@@ -288,7 +301,7 @@ class _PresetChip extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(14),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 11),
         decoration: BoxDecoration(
           color: AppTheme.water.withValues(alpha: 0.10),
           borderRadius: BorderRadius.circular(14),
@@ -297,17 +310,25 @@ class _PresetChip extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            const Icon(Icons.local_drink_outlined, color: AppTheme.water, size: 22),
+            const Icon(Icons.local_drink_outlined,
+                color: AppTheme.water, size: 22),
             const SizedBox(height: 4),
-            Text(
-              Fmt.millilitres(preset.volumeMl),
-              style: theme.textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: AppTheme.water,
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                Fmt.millilitres(preset.volumeMl),
+                maxLines: 1,
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: AppTheme.water,
+                ),
               ),
             ),
             Text(
               preset.label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
               style: theme.textTheme.labelSmall
                   ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
             ),
@@ -365,7 +386,7 @@ class _TargetBreakdown extends StatelessWidget {
           if (w.exerciseMl > 0)
             row(
               '${day.profile.dailyExerciseMinutes} min exercise × '
-              '${day.profile.waterMlPerExerciseMinute.toStringAsFixed(0)} ml/min',
+                  '${day.profile.waterMlPerExerciseMinute.toStringAsFixed(0)} ml/min',
               '+${Fmt.millilitres(w.exerciseMl)}',
             ),
           if (w.climateMl > 0)
@@ -502,8 +523,7 @@ class _CustomAmountSheet extends StatefulWidget {
 }
 
 class _CustomAmountSheetState extends State<_CustomAmountSheet> {
-  final TextEditingController _controller =
-      TextEditingController(text: '250');
+  final TextEditingController _controller = TextEditingController(text: '250');
 
   @override
   void dispose() {

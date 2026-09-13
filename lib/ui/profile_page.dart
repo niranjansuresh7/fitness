@@ -69,8 +69,7 @@ class _BodySection extends StatelessWidget {
                   label: 'Weight',
                   suffix: 'kg',
                   value: profile.weightKg,
-                  onChanged: (double v) =>
-                      save(profile.copyWith(weightKg: v)),
+                  onChanged: (double v) => save(profile.copyWith(weightKg: v)),
                 ),
               ),
               const SizedBox(width: 10),
@@ -80,8 +79,7 @@ class _BodySection extends StatelessWidget {
                   suffix: 'cm',
                   decimals: 0,
                   value: profile.heightCm,
-                  onChanged: (double v) =>
-                      save(profile.copyWith(heightCm: v)),
+                  onChanged: (double v) => save(profile.copyWith(heightCm: v)),
                 ),
               ),
             ],
@@ -94,8 +92,7 @@ class _BodySection extends StatelessWidget {
             allowEmpty: true,
             helper: 'Unlocks the Katch-McArdle formula and lean-mass protein '
                 'targets, both more accurate than the body-weight versions.',
-            onChanged: (double v) =>
-                save(profile.copyWith(bodyFatPercent: v)),
+            onChanged: (double v) => save(profile.copyWith(bodyFatPercent: v)),
             onCleared: () => save(profile.copyWith(clearBodyFat: true)),
           ),
           const SizedBox(height: 12),
@@ -252,9 +249,8 @@ class _ResultsCard extends StatelessWidget {
       ),
       child: Column(
         children: <Widget>[
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: <Widget>[
+          StatRow(
+            tiles: <Widget>[
               StatTile(
                 label: 'BMR',
                 value: Fmt.energy(bmr),
@@ -276,9 +272,8 @@ class _ResultsCard extends StatelessWidget {
             ],
           ),
           const Divider(height: 26),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: <Widget>[
+          StatRow(
+            tiles: <Widget>[
               for (final Nutrient n in Nutrient.macros)
                 StatTile(
                   label: n.label,
@@ -362,8 +357,8 @@ class _MacroSection extends StatelessWidget {
             value: profile.fatPercentOfEnergy * 100,
             helper: '20-35% is the usual range. Carbs take whatever energy '
                 'is left after protein and fat.',
-            onChanged: (double v) => save(
-                profile.copyWith(fatPercentOfEnergy: (v / 100).clamp(0.05, 0.8))),
+            onChanged: (double v) => save(profile.copyWith(
+                fatPercentOfEnergy: (v / 100).clamp(0.05, 0.8))),
           ),
           const SizedBox(height: 12),
           NumberField(
@@ -479,8 +474,7 @@ class _ReminderSection extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final ThemeData theme = Theme.of(context);
-    final int effective =
-        NotificationService.effectiveIntervalMinutes(profile);
+    final int effective = NotificationService.effectiveIntervalMinutes(profile);
     final int count = NotificationService.buildSlots(profile).length;
     final bool stretched = effective != profile.reminderIntervalMinutes;
 
@@ -489,8 +483,7 @@ class _ReminderSection extends ConsumerWidget {
           wake ? profile.wakeMinuteOfDay : profile.sleepMinuteOfDay;
       final TimeOfDay? picked = await showTimePicker(
         context: context,
-        initialTime:
-            TimeOfDay(hour: minutes ~/ 60, minute: minutes % 60),
+        initialTime: TimeOfDay(hour: minutes ~/ 60, minute: minutes % 60),
       );
       if (picked == null) return;
       final int value = picked.hour * 60 + picked.minute;
@@ -669,7 +662,8 @@ class _DataSection extends ConsumerWidget {
             TextField(
               controller: controller,
               maxLines: 5,
-              decoration: const InputDecoration(hintText: '{ "formatVersion" …'),
+              decoration:
+                  const InputDecoration(hintText: '{ "formatVersion" …'),
             ),
           ],
         ),
@@ -692,8 +686,13 @@ class _DataSection extends ConsumerWidget {
 
     try {
       final Object result = await ref.read(backupServiceProvider).restore(json);
+      // The restore wrote straight to the database, so pull the profile back
+      // into memory and refresh everything derived from the tables.
+      await ref.read(profileProvider.notifier).reload();
       ref.invalidate(foodListProvider);
       ref.invalidate(daySummaryProvider);
+      ref.invalidate(historyProvider);
+      ref.invalidate(drinkPresetsProvider);
       if (context.mounted) {
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text('$result')));

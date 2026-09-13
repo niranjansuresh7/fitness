@@ -20,8 +20,7 @@ class AppDatabase {
     String fileName = 'hydrafuel.db',
     String? path,
   }) async {
-    final String location =
-        path ?? p.join(await getDatabasesPath(), fileName);
+    final String location = path ?? p.join(await getDatabasesPath(), fileName);
 
     final Database db = await openDatabase(
       location,

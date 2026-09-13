@@ -102,8 +102,9 @@ class _Averages extends StatelessWidget {
     // Averaged over days with data only — including untracked days would drag
     // every average towards zero and say nothing useful.
     final int n = days.length;
-    double mean(double Function(DaySummary) pick) =>
-        n == 0 ? 0 : days.fold<double>(0, (double s, DaySummary d) => s + pick(d)) / n;
+    double mean(double Function(DaySummary) pick) => n == 0
+        ? 0
+        : days.fold<double>(0, (double s, DaySummary d) => s + pick(d)) / n;
 
     final int daysOnTarget =
         days.where((DaySummary d) => d.waterGoalMet).length;
@@ -113,9 +114,8 @@ class _Averages extends StatelessWidget {
       subtitle: 'Across $n logged ${n == 1 ? 'day' : 'days'}.',
       child: Column(
         children: <Widget>[
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: <Widget>[
+          StatRow(
+            tiles: <Widget>[
               StatTile(
                 label: 'Water',
                 value: Fmt.volume(mean((DaySummary d) => d.waterDrunkMl)),
@@ -124,12 +124,13 @@ class _Averages extends StatelessWidget {
               ),
               StatTile(
                 label: 'Energy',
-                value: Fmt.energy(mean((DaySummary d) => d.consumed(Nutrient.energy))),
+                value: Fmt.energy(
+                    mean((DaySummary d) => d.consumed(Nutrient.energy))),
               ),
               StatTile(
                 label: 'Protein',
-                value: Fmt.amount(
-                    Nutrient.protein, mean((DaySummary d) => d.consumed(Nutrient.protein))),
+                value: Fmt.amount(Nutrient.protein,
+                    mean((DaySummary d) => d.consumed(Nutrient.protein))),
               ),
             ],
           ),
@@ -184,7 +185,8 @@ class _DayRow extends StatelessWidget {
                     child: LinearProgressIndicator(
                       value: waterProgress,
                       minHeight: 6,
-                      backgroundColor: theme.colorScheme.surfaceContainerHighest,
+                      backgroundColor:
+                          theme.colorScheme.surfaceContainerHighest,
                       valueColor: AlwaysStoppedAnimation<Color>(
                         day.waterGoalMet ? AppTheme.good : AppTheme.water,
                       ),

@@ -94,8 +94,7 @@ class _FoodEditPageState extends ConsumerState<FoodEditPage> {
     super.dispose();
   }
 
-  double? get _servingGramsValue =>
-      double.tryParse(_servingGrams.text.trim());
+  double? get _servingGramsValue => double.tryParse(_servingGrams.text.trim());
 
   double? get _densityValue => double.tryParse(_density.text.trim());
 
@@ -282,9 +281,8 @@ class _FoodEditPageState extends ConsumerState<FoodEditPage> {
                     controller: _name,
                     textCapitalization: TextCapitalization.sentences,
                     decoration: const InputDecoration(labelText: 'Name'),
-                    validator: (String? v) => (v ?? '').trim().isEmpty
-                        ? 'Give it a name'
-                        : null,
+                    validator: (String? v) =>
+                        (v ?? '').trim().isEmpty ? 'Give it a name' : null,
                   ),
                   const SizedBox(height: 12),
                   TextFormField(
@@ -421,8 +419,7 @@ class _FoodEditPageState extends ConsumerState<FoodEditPage> {
                       for (final String p in problems)
                         Padding(
                           padding: const EdgeInsets.only(bottom: 4),
-                          child: Text('• $p',
-                              style: theme.textTheme.bodySmall),
+                          child: Text('• $p', style: theme.textTheme.bodySmall),
                         ),
                     ],
                   ),
@@ -442,9 +439,8 @@ class _FoodEditPageState extends ConsumerState<FoodEditPage> {
                           padding: const EdgeInsets.symmetric(vertical: 5),
                           child: TextFormField(
                             controller: _fields[n],
-                            keyboardType:
-                                const TextInputType.numberWithOptions(
-                                    decimal: true),
+                            keyboardType: const TextInputType.numberWithOptions(
+                                decimal: true),
                             onChanged: (_) => setState(() {}),
                             decoration: InputDecoration(
                               labelText: n.label,

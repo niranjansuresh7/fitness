@@ -103,7 +103,11 @@ void main() {
 
     test('fractional volumes are kept exactly', () {
       final DaySummary s = summary(
-        waters: <WaterEntry>[water(333.33, 8), water(333.33, 9), water(333.34, 10)],
+        waters: <WaterEntry>[
+          water(333.33, 8),
+          water(333.33, 9),
+          water(333.34, 10)
+        ],
       );
       expect(s.waterDrunkMl, closeTo(1000.0, 1e-9));
     });
@@ -157,7 +161,9 @@ void main() {
 
     test('no rate is suggested after bedtime', () {
       final DaySummary s = summary(waters: <WaterEntry>[water(500, 9)]);
-      expect(s.waterPerRemainingHour(today.add(const Duration(hours: 23, minutes: 30))),
+      expect(
+          s.waterPerRemainingHour(
+              today.add(const Duration(hours: 23, minutes: 30))),
           isNull);
     });
   });

@@ -5,6 +5,7 @@ import '../core/dates.dart';
 import '../core/formatting.dart';
 import '../core/theme.dart';
 import '../domain/daily_summary.dart';
+import '../domain/food_item.dart';
 import '../domain/log_entry.dart';
 import '../domain/nutrients.dart';
 import '../domain/targets.dart';
@@ -54,6 +55,10 @@ class TodayPage extends ConsumerWidget {
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
+        // Every tab is built at once inside the shell's IndexedStack, so the
+        // two floating action buttons coexist. Without distinct hero tags they
+        // collide on the next route transition and throw.
+        heroTag: 'fab-log-food',
         onPressed: () => Navigator.of(context).push(
           MaterialPageRoute<void>(builder: (_) => const LogFoodPage()),
         ),
@@ -208,7 +213,9 @@ class _EnergyCard extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
                 Text(
-                  over ? Fmt.energy(consumed - t.energyKcal) : Fmt.energy(remaining),
+                  over
+                      ? Fmt.energy(consumed - t.energyKcal)
+                      : Fmt.energy(remaining),
                   style: theme.textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.w800,
                     color: over ? AppTheme.warning : null,
@@ -226,9 +233,8 @@ class _EnergyCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: <Widget>[
+          StatRow(
+            tiles: <Widget>[
               StatTile(label: 'Eaten', value: Fmt.energy(consumed)),
               StatTile(label: 'Budget', value: Fmt.energy(t.energyKcal)),
               StatTile(
@@ -278,13 +284,13 @@ class _MacroCard extends StatelessWidget {
               color: colorForNutrient(n, context),
             ),
           const SizedBox(height: 6),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: <Widget>[
+          StatRow(
+            tiles: <Widget>[
               for (final Nutrient n in Nutrient.macros)
                 StatTile(
-                  label: '${n.label} left',
+                  label: n.label,
                   value: Fmt.amount(n, day.remaining(n)),
+                  caption: 'left',
                   color: colorForNutrient(n, context),
                 ),
             ],
@@ -424,43 +430,68 @@ class _EntryRow extends ConsumerWidget {
       onDismissed: (_) {
         if (id != null) ref.read(actionsProvider).deleteEntry(id);
       },
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        child: Row(
-          children: <Widget>[
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(
-                    entry.foodName,
-                    style: theme.textTheme.bodyLarge
-                        ?.copyWith(fontWeight: FontWeight.w600),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    '${Fmt.grams(entry.grams)} · '
-                    'P ${Fmt.bare(Nutrient.protein, entry.nutrition[Nutrient.protein])} · '
-                    'C ${Fmt.bare(Nutrient.carbs, entry.nutrition[Nutrient.carbs])} · '
-                    'F ${Fmt.bare(Nutrient.fat, entry.nutrition[Nutrient.fat])}',
-                    style: theme.textTheme.bodySmall
-                        ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-                  ),
-                ],
+      child: InkWell(
+        onTap: () => _edit(context),
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Row(
+            children: <Widget>[
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      entry.foodName,
+                      style: theme.textTheme.bodyLarge
+                          ?.copyWith(fontWeight: FontWeight.w600),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '${Fmt.grams(entry.grams)} · '
+                      'P ${Fmt.bare(Nutrient.protein, entry.nutrition[Nutrient.protein])} · '
+                      'C ${Fmt.bare(Nutrient.carbs, entry.nutrition[Nutrient.carbs])} · '
+                      'F ${Fmt.bare(Nutrient.fat, entry.nutrition[Nutrient.fat])}',
+                      style: theme.textTheme.bodySmall
+                          ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(width: 10),
-            Text(
-              Fmt.energy(entry.nutrition[Nutrient.energy]),
-              style: theme.textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-                fontFeatures: const <FontFeature>[
-                  FontFeature.tabularFigures(),
-                ],
+              const SizedBox(width: 10),
+              Text(
+                Fmt.energy(entry.nutrition[Nutrient.energy]),
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  fontFeatures: const <FontFeature>[
+                    FontFeature.tabularFigures(),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Reopen the amount screen for this entry.
+  ///
+  /// The food is rebuilt from the entry's own snapshot rather than looked up
+  /// in the library. That keeps the correction anchored to what was actually
+  /// recorded — and works just as well for an entry whose food has since been
+  /// edited or deleted.
+  void _edit(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => LogAmountPage(
+          food: FoodItem(
+            id: entry.foodId,
+            name: entry.foodName,
+            per100g: entry.per100gSnapshot,
+          ),
+          editing: entry,
         ),
       ),
     );

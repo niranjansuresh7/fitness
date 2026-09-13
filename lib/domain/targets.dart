@@ -36,8 +36,7 @@ class NutrientTarget {
   final bool isOverride;
 
   /// Progress towards this target as a fraction (may exceed 1.0).
-  double progressFrom(double consumed) =>
-      amount <= 0 ? 0.0 : consumed / amount;
+  double progressFrom(double consumed) => amount <= 0 ? 0.0 : consumed / amount;
 
   /// What is still allowed or still owed. Never negative.
   double remainingFrom(double consumed) {
@@ -144,15 +143,22 @@ class TargetCalculator {
         return _mifflin(p);
       case BmrFormula.harrisBenedict:
         return p.sex == Sex.male
-            ? 88.362 + 13.397 * p.weightKg + 4.799 * p.heightCm - 5.677 * p.ageYears
-            : 447.593 + 9.247 * p.weightKg + 3.098 * p.heightCm - 4.330 * p.ageYears;
+            ? 88.362 +
+                13.397 * p.weightKg +
+                4.799 * p.heightCm -
+                5.677 * p.ageYears
+            : 447.593 +
+                9.247 * p.weightKg +
+                3.098 * p.heightCm -
+                4.330 * p.ageYears;
       case BmrFormula.mifflinStJeor:
         return _mifflin(p);
     }
   }
 
   static double _mifflin(UserProfile p) {
-    final double base = 10.0 * p.weightKg + 6.25 * p.heightCm - 5.0 * p.ageYears;
+    final double base =
+        10.0 * p.weightKg + 6.25 * p.heightCm - 5.0 * p.ageYears;
     return p.sex == Sex.male ? base + 5.0 : base - 161.0;
   }
 
@@ -350,6 +356,7 @@ class TargetCalculator {
   }
 
   /// Convenience: how much of [n] is left for the day.
-  static double remaining(DailyTargets t, NutritionFacts consumed, Nutrient n) =>
+  static double remaining(
+          DailyTargets t, NutritionFacts consumed, Nutrient n) =>
       t.nutrients[n]?.remainingFrom(consumed[n]) ?? 0.0;
 }

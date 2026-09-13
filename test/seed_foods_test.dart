@@ -51,7 +51,8 @@ void main() {
   });
 
   test('named servings carry a weight', () {
-    for (final FoodItem f in foods.where((FoodItem f) => f.servingName.isNotEmpty)) {
+    for (final FoodItem f
+        in foods.where((FoodItem f) => f.servingName.isNotEmpty)) {
       expect(f.servingGrams, isNotNull, reason: f.name);
       expect(f.servingGrams, greaterThan(0), reason: f.name);
     }
@@ -112,7 +113,8 @@ void main() {
         Nutrient.fat: 10,
         Nutrient.satFat: 12,
       }).validate();
-      expect(problems.any((String p) => p.contains('exceed total fat')), isTrue);
+      expect(
+          problems.any((String p) => p.contains('exceed total fat')), isTrue);
     });
 
     test('sugars plus fibre exceeding carbs', () {
@@ -121,7 +123,8 @@ void main() {
         Nutrient.sugar: 8,
         Nutrient.fiber: 5,
       }).validate();
-      expect(problems.any((String p) => p.contains('exceed total carbohydrate')),
+      expect(
+          problems.any((String p) => p.contains('exceed total carbohydrate')),
           isTrue);
     });
 

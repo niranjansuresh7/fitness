@@ -34,7 +34,8 @@ class _LogFoodPageState extends ConsumerState<LogFoodPage> {
 
   @override
   Widget build(BuildContext context) {
-    final AsyncValue<List<FoodItem>> async = ref.watch(foodListProvider(_query));
+    final AsyncValue<List<FoodItem>> async =
+        ref.watch(foodListProvider(_query));
 
     return Scaffold(
       appBar: AppBar(
@@ -94,9 +95,8 @@ class _LogFoodPageState extends ConsumerState<LogFoodPage> {
                         'F ${Fmt.bare(Nutrient.fat, f.per100g[Nutrient.fat])} '
                         'per 100 g',
                       ),
-                      trailing: f.favorite
-                          ? const Icon(Icons.star, size: 18)
-                          : null,
+                      trailing:
+                          f.favorite ? const Icon(Icons.star, size: 18) : null,
                       onTap: () => Navigator.of(context).push(
                         MaterialPageRoute<void>(
                           builder: (_) =>
@@ -188,9 +188,8 @@ class _LogAmountPageState extends ConsumerState<LogAmountPage> {
     _mode = editing == null && widget.food.servingGrams != null
         ? AmountMode.servings
         : AmountMode.grams;
-    _meal = editing?.meal ??
-        widget.meal ??
-        MealType.forHour(DateTime.now().hour);
+    _meal =
+        editing?.meal ?? widget.meal ?? MealType.forHour(DateTime.now().hour);
   }
 
   @override
@@ -200,6 +199,14 @@ class _LogAmountPageState extends ConsumerState<LogAmountPage> {
   }
 
   double get _input => double.tryParse(_amount.text.trim()) ?? 0.0;
+
+  /// The composition this entry is measured against.
+  ///
+  /// When editing, the entry's own snapshot wins over the library food. Fixing
+  /// a mistyped weight must not silently re-price the entry against a food
+  /// definition that has changed since it was logged.
+  NutritionFacts get _facts =>
+      widget.editing?.per100gSnapshot ?? widget.food.per100g;
 
   /// The single number everything else is derived from.
   ///
@@ -264,25 +271,44 @@ class _LogAmountPageState extends ConsumerState<LogAmountPage> {
       foodId: widget.food.id,
       foodName: widget.food.displayName,
       grams: grams,
-      per100gSnapshot: widget.food.per100g,
+      per100gSnapshot: _facts,
       meal: _meal,
       loggedAt: at,
     );
+
+    // Captured before the await: the messenger has to be resolved while this
+    // page's context is still mounted, but used after it is gone.
+    final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
+    final NavigatorState navigator = Navigator.of(context);
 
     if (editing == null) {
       await ref.read(actionsProvider).logFood(entry);
     } else {
       await ref.read(actionsProvider).updateEntry(entry);
     }
+    if (!mounted) return;
 
-    if (mounted) Navigator.of(context).pop();
+    // Return to the diary rather than the food picker. Landing back on the
+    // list you just came from looks like nothing happened; the snackbar plus
+    // the updated totals make the result obvious.
+    navigator.popUntil((Route<dynamic> route) => route.isFirst);
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(
+          editing == null
+              ? 'Logged ${Fmt.grams(grams)} of ${widget.food.name}'
+              : 'Entry updated',
+        ),
+        duration: const Duration(seconds: 2),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     final double grams = _grams;
-    final NutritionFacts result = widget.food.forGrams(grams);
+    final NutritionFacts result = _facts.scaledToGrams(grams);
     final List<AmountMode> modes = _availableModes;
 
     return Scaffold(
@@ -354,9 +380,8 @@ class _LogAmountPageState extends ConsumerState<LogAmountPage> {
             subtitle: 'Scaled from the per-100 g values you saved.',
             child: Column(
               children: <Widget>[
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: <Widget>[
+                StatRow(
+                  tiles: <Widget>[
                     StatTile(
                       label: 'Energy',
                       value: Fmt.energy(result[Nutrient.energy]),
@@ -374,7 +399,7 @@ class _LogAmountPageState extends ConsumerState<LogAmountPage> {
                 for (final Nutrient n in Nutrient.values)
                   if (n != Nutrient.energy &&
                       !Nutrient.macros.contains(n) &&
-                      widget.food.per100g.has(n))
+                      _facts.has(n))
                     Padding(
                       padding: const EdgeInsets.symmetric(vertical: 3),
                       child: Row(

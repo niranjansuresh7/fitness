@@ -77,13 +77,14 @@ void main() {
         final List<ReminderSlot> slots = NotificationService.buildSlots(
           profile(wake: 5 * 60, sleep: 23 * 60 + 59, interval: interval),
         );
-        expect(slots.length,
-            lessThanOrEqualTo(NotificationService.maxReminders),
+        expect(
+            slots.length, lessThanOrEqualTo(NotificationService.maxReminders),
             reason: 'interval $interval produced ${slots.length} reminders');
       }
     });
 
-    test('a too-short interval is stretched rather than silently truncated', () {
+    test('a too-short interval is stretched rather than silently truncated',
+        () {
       // 05:00-23:59 is 1139 waking minutes. At 15-minute spacing that is 75
       // reminders, past what iOS will hold, so the interval must widen.
       final UserProfile p =
@@ -93,11 +94,14 @@ void main() {
       expect(effective % 5, 0);
 
       final List<ReminderSlot> slots = NotificationService.buildSlots(p);
-      expect(slots.length,
-          lessThanOrEqualTo(NotificationService.maxReminders));
+      expect(slots.length, lessThanOrEqualTo(NotificationService.maxReminders));
       // Still covers the full day rather than stopping early.
-      expect(slots.last.cumulativeMl,
-          closeTo(slots.fold<double>(0, (double s, ReminderSlot r) => s + r.perSlotMl), 1e-6));
+      expect(
+          slots.last.cumulativeMl,
+          closeTo(
+              slots.fold<double>(
+                  0, (double s, ReminderSlot r) => s + r.perSlotMl),
+              1e-6));
     });
 
     test('an interval that already fits is left exactly as chosen', () {

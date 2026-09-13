@@ -40,32 +40,46 @@ enum Nutrient {
   fat('fat', 'Fat', NutrientUnit.gram, NutrientGroup.macro, 1),
 
   fiber('fiber', 'Fibre', NutrientUnit.gram, NutrientGroup.carbQuality, 1),
-  sugar('sugar', 'Total sugars', NutrientUnit.gram, NutrientGroup.carbQuality, 1),
-  addedSugar('addedSugar', 'Added sugar', NutrientUnit.gram, NutrientGroup.carbQuality, 1),
+  sugar(
+      'sugar', 'Total sugars', NutrientUnit.gram, NutrientGroup.carbQuality, 1),
+  addedSugar('addedSugar', 'Added sugar', NutrientUnit.gram,
+      NutrientGroup.carbQuality, 1),
 
   satFat('satFat', 'Saturated fat', NutrientUnit.gram, NutrientGroup.lipid, 1),
-  monoFat('monoFat', 'Monounsaturated fat', NutrientUnit.gram, NutrientGroup.lipid, 1),
-  polyFat('polyFat', 'Polyunsaturated fat', NutrientUnit.gram, NutrientGroup.lipid, 1),
+  monoFat('monoFat', 'Monounsaturated fat', NutrientUnit.gram,
+      NutrientGroup.lipid, 1),
+  polyFat('polyFat', 'Polyunsaturated fat', NutrientUnit.gram,
+      NutrientGroup.lipid, 1),
   transFat('transFat', 'Trans fat', NutrientUnit.gram, NutrientGroup.lipid, 2),
   omega3('omega3', 'Omega-3', NutrientUnit.gram, NutrientGroup.lipid, 2),
-  cholesterol('cholesterol', 'Cholesterol', NutrientUnit.milligram, NutrientGroup.lipid, 0),
+  cholesterol('cholesterol', 'Cholesterol', NutrientUnit.milligram,
+      NutrientGroup.lipid, 0),
 
   sodium('sodium', 'Sodium', NutrientUnit.milligram, NutrientGroup.mineral, 0),
-  potassium('potassium', 'Potassium', NutrientUnit.milligram, NutrientGroup.mineral, 0),
-  calcium('calcium', 'Calcium', NutrientUnit.milligram, NutrientGroup.mineral, 0),
+  potassium('potassium', 'Potassium', NutrientUnit.milligram,
+      NutrientGroup.mineral, 0),
+  calcium(
+      'calcium', 'Calcium', NutrientUnit.milligram, NutrientGroup.mineral, 0),
   iron('iron', 'Iron', NutrientUnit.milligram, NutrientGroup.mineral, 1),
-  magnesium('magnesium', 'Magnesium', NutrientUnit.milligram, NutrientGroup.mineral, 0),
+  magnesium('magnesium', 'Magnesium', NutrientUnit.milligram,
+      NutrientGroup.mineral, 0),
   zinc('zinc', 'Zinc', NutrientUnit.milligram, NutrientGroup.mineral, 1),
-  phosphorus('phosphorus', 'Phosphorus', NutrientUnit.milligram, NutrientGroup.mineral, 0),
+  phosphorus('phosphorus', 'Phosphorus', NutrientUnit.milligram,
+      NutrientGroup.mineral, 0),
 
-  vitaminA('vitaminA', 'Vitamin A', NutrientUnit.microgram, NutrientGroup.vitamin, 0),
-  vitaminC('vitaminC', 'Vitamin C', NutrientUnit.milligram, NutrientGroup.vitamin, 1),
-  vitaminD('vitaminD', 'Vitamin D', NutrientUnit.microgram, NutrientGroup.vitamin, 1),
-  vitaminB12('vitaminB12', 'Vitamin B12', NutrientUnit.microgram, NutrientGroup.vitamin, 2),
+  vitaminA('vitaminA', 'Vitamin A', NutrientUnit.microgram,
+      NutrientGroup.vitamin, 0),
+  vitaminC('vitaminC', 'Vitamin C', NutrientUnit.milligram,
+      NutrientGroup.vitamin, 1),
+  vitaminD('vitaminD', 'Vitamin D', NutrientUnit.microgram,
+      NutrientGroup.vitamin, 1),
+  vitaminB12('vitaminB12', 'Vitamin B12', NutrientUnit.microgram,
+      NutrientGroup.vitamin, 2),
   folate('folate', 'Folate', NutrientUnit.microgram, NutrientGroup.vitamin, 0),
 
   water('water', 'Water content', NutrientUnit.gram, NutrientGroup.other, 0),
-  caffeine('caffeine', 'Caffeine', NutrientUnit.milligram, NutrientGroup.other, 0),
+  caffeine(
+      'caffeine', 'Caffeine', NutrientUnit.milligram, NutrientGroup.other, 0),
   alcohol('alcohol', 'Alcohol', NutrientUnit.gram, NutrientGroup.other, 1);
 
   const Nutrient(this.key, this.label, this.unit, this.group, this.decimals);

@@ -18,8 +18,7 @@ class ReminderSchedulePage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final ThemeData theme = Theme.of(context);
     final UserProfile profile = ref.watch(profileProvider);
-    final List<ReminderSlot> slots =
-        NotificationService.buildSlots(profile);
+    final List<ReminderSlot> slots = NotificationService.buildSlots(profile);
 
     final DateTime now = DateTime.now();
     final int minuteNow = now.hour * 60 + now.minute;

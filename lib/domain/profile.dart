@@ -40,8 +40,8 @@ enum BmrFormula {
       'Most accurate for the general population. Needs height, weight, age, sex.'),
   katchMcArdle('Katch-McArdle',
       'More accurate if you know your body-fat %. Based on lean mass only.'),
-  harrisBenedict('Harris-Benedict (revised)',
-      'Older formula, kept for comparison.');
+  harrisBenedict(
+      'Harris-Benedict (revised)', 'Older formula, kept for comparison.');
 
   const BmrFormula(this.label, this.description);
   final String label;
@@ -201,7 +201,8 @@ class UserProfile {
       birthDate: clearBirthDate ? null : (birthDate ?? this.birthDate),
       heightCm: heightCm ?? this.heightCm,
       weightKg: weightKg ?? this.weightKg,
-      bodyFatPercent: clearBodyFat ? null : (bodyFatPercent ?? this.bodyFatPercent),
+      bodyFatPercent:
+          clearBodyFat ? null : (bodyFatPercent ?? this.bodyFatPercent),
       activityLevel: activityLevel ?? this.activityLevel,
       goal: goal ?? this.goal,
       rateKgPerWeek: rateKgPerWeek ?? this.rateKgPerWeek,
@@ -221,8 +222,9 @@ class UserProfile {
       remindersEnabled: remindersEnabled ?? this.remindersEnabled,
       reminderIntervalMinutes:
           reminderIntervalMinutes ?? this.reminderIntervalMinutes,
-      energyOverrideKcal:
-          clearEnergyOverride ? null : (energyOverrideKcal ?? this.energyOverrideKcal),
+      energyOverrideKcal: clearEnergyOverride
+          ? null
+          : (energyOverrideKcal ?? this.energyOverrideKcal),
       customTargets: customTargets ?? this.customTargets,
     );
   }
@@ -287,19 +289,20 @@ class UserProfile {
       heightCm: optDouble(json['heightCm']) ?? 175.0,
       weightKg: optDouble(json['weightKg']) ?? 70.0,
       bodyFatPercent: optDouble(json['bodyFatPercent']),
-      activityLevel:
-          pick(ActivityLevel.values, json['activityLevel'], ActivityLevel.light),
+      activityLevel: pick(
+          ActivityLevel.values, json['activityLevel'], ActivityLevel.light),
       goal: pick(WeightGoal.values, json['goal'], WeightGoal.maintain),
       rateKgPerWeek: optDouble(json['rateKgPerWeek']) ?? 0.0,
       bmrFormula:
           pick(BmrFormula.values, json['bmrFormula'], BmrFormula.mifflinStJeor),
       proteinGPerKg: optDouble(json['proteinGPerKg']) ?? 1.6,
-      proteinBasis:
-          pick(ProteinBasis.values, json['proteinBasis'], ProteinBasis.bodyWeight),
+      proteinBasis: pick(
+          ProteinBasis.values, json['proteinBasis'], ProteinBasis.bodyWeight),
       fatPercentOfEnergy: optDouble(json['fatPercentOfEnergy']) ?? 0.28,
       waterMlPerKg: optDouble(json['waterMlPerKg']) ?? 35.0,
       climate: pick(Climate.values, json['climate'], Climate.temperate),
-      dailyExerciseMinutes: (json['dailyExerciseMinutes'] as num?)?.toInt() ?? 0,
+      dailyExerciseMinutes:
+          (json['dailyExerciseMinutes'] as num?)?.toInt() ?? 0,
       waterMlPerExerciseMinute:
           optDouble(json['waterMlPerExerciseMinute']) ?? 12.0,
       countFoodWaterTowardsTarget:

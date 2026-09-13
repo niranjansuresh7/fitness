@@ -31,11 +31,17 @@ class DaySummary {
   /// grams; at the densities involved 1 g is treated as 1 ml.
   double get waterFromFoodMl => totals[Nutrient.water];
 
-  DailyTargets get targets => TargetCalculator.build(
-        profile,
-        date: date,
-        foodWaterMl: waterFromFoodMl,
-      );
+  /// Targets for this day, computed once.
+  ///
+  /// A single screen reads this dozens of times while laying out its bars and
+  /// rings, and building the full target set is not free. `late final` makes it
+  /// lazy and cached for the lifetime of the summary, which is exactly one
+  /// day's worth of data.
+  late final DailyTargets targets = TargetCalculator.build(
+    profile,
+    date: date,
+    foodWaterMl: waterFromFoodMl,
+  );
 
   double consumed(Nutrient n) => totals[n];
 
@@ -94,9 +100,8 @@ class DaySummary {
 
   // --- Meals ---------------------------------------------------------------
 
-  List<LogEntry> entriesFor(MealType meal) => entries
-      .where((LogEntry e) => e.meal == meal)
-      .toList(growable: false);
+  List<LogEntry> entriesFor(MealType meal) =>
+      entries.where((LogEntry e) => e.meal == meal).toList(growable: false);
 
   NutritionFacts totalsFor(MealType meal) =>
       NutritionFacts.sum(entriesFor(meal).map((LogEntry e) => e.nutrition));
@@ -119,8 +124,7 @@ class DaySummary {
       if (t.amount <= 0) return;
       if (totals[n] / t.amount < threshold) out.add(n);
     });
-    out.sort((Nutrient a, Nutrient b) =>
-        progress(a).compareTo(progress(b)));
+    out.sort((Nutrient a, Nutrient b) => progress(a).compareTo(progress(b)));
     return out;
   }
 

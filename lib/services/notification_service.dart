@@ -82,7 +82,8 @@ class NotificationService {
         _plugin.resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin>();
     if (androidPlugin != null) {
-      final bool? granted = await androidPlugin.requestNotificationsPermission();
+      final bool? granted =
+          await androidPlugin.requestNotificationsPermission();
       return granted ?? false;
     }
 
@@ -225,7 +226,8 @@ class NotificationService {
 
     final List<ReminderSlot> slots = <ReminderSlot>[];
     for (int i = 0; i < count; i++) {
-      final int minuteOfDay = (profile.wakeMinuteOfDay + offsets[i]) % (24 * 60);
+      final int minuteOfDay =
+          (profile.wakeMinuteOfDay + offsets[i]) % (24 * 60);
       final double cumulative = perSlot * (i + 1);
       final bool isLast = i == count - 1;
 
@@ -250,9 +252,8 @@ class NotificationService {
   /// theatre. The tracking stays exact; only this prompt is rounded.
   static int _roundMl(double ml) => (ml / 10).round() * 10;
 
-  static String _formatLitres(double ml) => ml >= 1000
-      ? '${(ml / 1000).toStringAsFixed(2)} L'
-      : '${ml.round()} ml';
+  static String _formatLitres(double ml) =>
+      ml >= 1000 ? '${(ml / 1000).toStringAsFixed(2)} L' : '${ml.round()} ml';
 }
 
 /// One scheduled reminder.

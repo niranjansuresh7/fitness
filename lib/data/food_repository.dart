@@ -61,13 +61,12 @@ class FoodRepository {
   }
 
   Future<FoodItem?> byId(int id) async {
-    final List<Map<String, Object?>> rows =
-        await _db.query('foods', where: 'id = ?', whereArgs: <Object?>[id], limit: 1);
+    final List<Map<String, Object?>> rows = await _db.query('foods',
+        where: 'id = ?', whereArgs: <Object?>[id], limit: 1);
     return rows.isEmpty ? null : _fromRow(rows.first);
   }
 
-  Future<int> insert(FoodItem food) =>
-      _db.insert('foods', _toRow(food));
+  Future<int> insert(FoodItem food) => _db.insert('foods', _toRow(food));
 
   Future<void> update(FoodItem food) async {
     final int? id = food.id;

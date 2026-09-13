@@ -58,16 +58,16 @@ void main() {
     });
 
     test('0.5 kg/week of fat loss is a 550 kcal daily deficit', () {
-      final UserProfile p = baseProfile()
-          .copyWith(goal: WeightGoal.lose, rateKgPerWeek: 0.5);
+      final UserProfile p =
+          baseProfile().copyWith(goal: WeightGoal.lose, rateKgPerWeek: 0.5);
       // 0.5 * 7700 / 7 = 550
       expect(TargetCalculator.energyAdjustment(p), closeTo(-550.0, 0.5));
       expect(TargetCalculator.energyBudget(p), closeTo(1897.5, 1.0));
     });
 
     test('a surplus is applied in the other direction', () {
-      final UserProfile p = baseProfile()
-          .copyWith(goal: WeightGoal.gain, rateKgPerWeek: 0.25);
+      final UserProfile p =
+          baseProfile().copyWith(goal: WeightGoal.gain, rateKgPerWeek: 0.25);
       expect(TargetCalculator.energyAdjustment(p), closeTo(275.0, 0.5));
     });
 
@@ -83,8 +83,8 @@ void main() {
     });
 
     test('maintain ignores any rate that happens to be set', () {
-      final UserProfile p = baseProfile()
-          .copyWith(goal: WeightGoal.maintain, rateKgPerWeek: 1.0);
+      final UserProfile p =
+          baseProfile().copyWith(goal: WeightGoal.maintain, rateKgPerWeek: 1.0);
       expect(TargetCalculator.energyAdjustment(p), 0.0);
     });
 

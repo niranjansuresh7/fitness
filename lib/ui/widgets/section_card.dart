@@ -60,6 +60,32 @@ class SectionCard extends StatelessWidget {
   }
 }
 
+/// A row of [StatTile]s that shares the width evenly.
+///
+/// Phone screens are about 390 points wide, and three or four stat tiles laid
+/// out at their natural size overflow that. Giving each an equal [Expanded]
+/// share, and letting the value scale down inside it, keeps the row intact at
+/// every width instead of clipping the last tile.
+class StatRow extends StatelessWidget {
+  const StatRow({super.key, required this.tiles, this.spacing = 8});
+
+  final List<Widget> tiles;
+  final double spacing;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        for (int i = 0; i < tiles.length; i++) ...<Widget>[
+          if (i > 0) SizedBox(width: spacing),
+          Expanded(child: tiles[i]),
+        ],
+      ],
+    );
+  }
+}
+
 /// A short label above a value, used in the stat rows.
 class StatTile extends StatelessWidget {
   const StatTile({
@@ -86,6 +112,8 @@ class StatTile extends StatelessWidget {
       children: <Widget>[
         Text(
           label.toUpperCase(),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
           style: theme.textTheme.labelSmall?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
             letterSpacing: 0.6,
@@ -93,17 +121,26 @@ class StatTile extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 3),
-        Text(
-          value,
-          style: theme.textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w700,
-            color: color,
-            fontFeatures: const <FontFeature>[FontFeature.tabularFigures()],
+        // Numbers shrink rather than truncate: a clipped figure would be
+        // actively misleading, a slightly smaller one is not.
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Text(
+            value,
+            maxLines: 1,
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w700,
+              color: color,
+              fontFeatures: const <FontFeature>[FontFeature.tabularFigures()],
+            ),
           ),
         ),
         if (captionText != null)
           Text(
             captionText,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: theme.textTheme.bodySmall
                 ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
           ),

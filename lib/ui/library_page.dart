@@ -28,11 +28,13 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
-    final AsyncValue<List<FoodItem>> async = ref.watch(foodListProvider(_query));
+    final AsyncValue<List<FoodItem>> async =
+        ref.watch(foodListProvider(_query));
 
     return Scaffold(
       appBar: AppBar(title: const Text('Foods')),
       floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'fab-new-food',
         onPressed: () => Navigator.of(context).push(
           MaterialPageRoute<void>(builder: (_) => const FoodEditPage()),
         ),
