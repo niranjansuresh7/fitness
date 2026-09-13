@@ -18,7 +18,9 @@ class BackupService {
   final AppDatabase _app;
   final SettingsRepository _settings;
 
-  static const int formatVersion = 1;
+  /// Version 2 added blood results. A version 1 file still restores; it just
+  /// carries no panel.
+  static const int formatVersion = 2;
 
   Database get _db => _app.db;
 
@@ -35,6 +37,7 @@ class BackupService {
       'foods': await _db.query('foods'),
       'logEntries': await _db.query('log_entries'),
       'waterEntries': await _db.query('water_entries'),
+      'bloodResults': await _db.query('blood_results'),
     };
 
     return const JsonEncoder.withIndent('  ').convert(payload);
@@ -61,11 +64,13 @@ class BackupService {
     final List<Map<String, Object?>> foods = _rows(decoded['foods']);
     final List<Map<String, Object?>> entries = _rows(decoded['logEntries']);
     final List<Map<String, Object?>> waters = _rows(decoded['waterEntries']);
+    final List<Map<String, Object?>> blood = _rows(decoded['bloodResults']);
 
     await _db.transaction((Transaction txn) async {
       await txn.delete('foods');
       await txn.delete('log_entries');
       await txn.delete('water_entries');
+      await txn.delete('blood_results');
 
       for (final Map<String, Object?> row in foods) {
         await txn.insert('foods', row);
@@ -75,6 +80,9 @@ class BackupService {
       }
       for (final Map<String, Object?> row in waters) {
         await txn.insert('water_entries', row);
+      }
+      for (final Map<String, Object?> row in blood) {
+        await txn.insert('blood_results', row);
       }
     });
 
@@ -96,6 +104,7 @@ class BackupService {
       foods: foods.length,
       entries: entries.length,
       waterEntries: waters.length,
+      bloodResults: blood.length,
     );
   }
 
@@ -113,13 +122,15 @@ class BackupRestoreResult {
     required this.foods,
     required this.entries,
     required this.waterEntries,
+    this.bloodResults = 0,
   });
 
   final int foods;
   final int entries;
   final int waterEntries;
+  final int bloodResults;
 
   @override
-  String toString() =>
-      '$foods foods, $entries food entries and $waterEntries drinks restored.';
+  String toString() => '$foods foods, $entries food entries, '
+      '$waterEntries drinks and $bloodResults blood results restored.';
 }

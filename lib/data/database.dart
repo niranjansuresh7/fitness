@@ -10,7 +10,7 @@ class AppDatabase {
 
   final Database db;
 
-  static const int _version = 1;
+  static const int _version = 2;
 
   /// Opens the database, creating it on first run.
   ///
@@ -32,8 +32,11 @@ class AppDatabase {
         await _createSchema(d);
       },
       onUpgrade: (Database d, int from, int to) async {
-        // Version 1 is the initial schema; migrations land here as the
-        // schema evolves. Never drop a table with logged history in it.
+        // Migrations are additive and run in order. Never drop a table with
+        // logged history in it.
+        if (from < 2) {
+          await _createBloodResults(d);
+        }
       },
     );
 
@@ -99,6 +102,25 @@ class AppDatabase {
     ''');
 
     await batch.commit(noResult: true);
+    await _createBloodResults(d);
+  }
+
+  /// Blood test results, one row per marker per draw.
+  ///
+  /// Kept as a history rather than a single current value so a re-test shows
+  /// movement, and so targets always follow the most recent draw on their own.
+  static Future<void> _createBloodResults(Database d) async {
+    await d.execute('''
+      CREATE TABLE blood_results (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        marker TEXT NOT NULL,
+        value REAL NOT NULL,
+        taken_on TEXT NOT NULL,
+        note TEXT NOT NULL DEFAULT ''
+      )
+    ''');
+    await d.execute(
+        'CREATE INDEX idx_blood_marker ON blood_results(marker, taken_on)');
   }
 
   Future<void> close() => db.close();

@@ -4,8 +4,11 @@ import '../core/dates.dart';
 import '../data/database.dart';
 import '../data/food_repository.dart';
 import '../data/log_repository.dart';
+import '../data/marker_repository.dart';
 import '../data/settings_repository.dart';
 import '../data/water_repository.dart';
+import '../domain/blood_marker.dart';
+import '../domain/clinical_flags.dart';
 import '../domain/daily_summary.dart';
 import '../domain/food_item.dart';
 import '../domain/log_entry.dart';
@@ -47,6 +50,10 @@ final Provider<LogRepository> logRepositoryProvider = Provider<LogRepository>(
 final Provider<WaterRepository> waterRepositoryProvider =
     Provider<WaterRepository>(
         (Ref ref) => WaterRepository(ref.watch(appDatabaseProvider)));
+
+final Provider<MarkerRepository> markerRepositoryProvider =
+    Provider<MarkerRepository>(
+        (Ref ref) => MarkerRepository(ref.watch(appDatabaseProvider)));
 
 final Provider<SettingsRepository> settingsRepositoryProvider =
     Provider<SettingsRepository>(
@@ -103,6 +110,29 @@ final StateProvider<DateTime> selectedDateProvider =
 final Provider<String> selectedDayKeyProvider =
     Provider<String>((Ref ref) => dayKey(ref.watch(selectedDateProvider)));
 
+// --- Blood markers ---------------------------------------------------------
+
+/// Every recorded result, newest draw first.
+final FutureProvider<List<BloodResult>> bloodResultsProvider =
+    FutureProvider<List<BloodResult>>(
+  (Ref ref) => ref.watch(markerRepositoryProvider).all(),
+);
+
+/// The latest value for each marker.
+final FutureProvider<MarkerSnapshot> markerSnapshotProvider =
+    FutureProvider<MarkerSnapshot>((Ref ref) async {
+  final List<BloodResult> all = await ref.watch(bloodResultsProvider.future);
+  return MarkerSnapshot.fromHistory(all);
+});
+
+/// What those results mean for the daily targets.
+final FutureProvider<ClinicalAssessment> assessmentProvider =
+    FutureProvider<ClinicalAssessment>((Ref ref) async {
+  final MarkerSnapshot snapshot =
+      await ref.watch(markerSnapshotProvider.future);
+  return ClinicalAssessment.fromMarkers(snapshot);
+});
+
 // --- Day summary -----------------------------------------------------------
 
 /// Everything logged on one day, keyed by its `yyyy-MM-dd` string.
@@ -118,12 +148,15 @@ final FutureProviderFamily<DaySummary, String> daySummaryProvider =
       await ref.watch(logRepositoryProvider).forDay(date);
   final List<WaterEntry> waters =
       await ref.watch(waterRepositoryProvider).forDay(date);
+  final ClinicalAssessment assessment =
+      await ref.watch(assessmentProvider.future);
 
   return DaySummary(
     date: date,
     profile: profile,
     entries: entries,
     waterEntries: waters,
+    assessment: assessment,
   );
 });
 
@@ -227,6 +260,29 @@ class TrackerActions {
     _refreshFoods();
   }
 
+  void _refreshMarkers() {
+    _ref.invalidate(bloodResultsProvider);
+    // The day summaries read the assessment, so they follow automatically once
+    // the results provider is rebuilt.
+  }
+
+  Future<void> saveBloodResult(BloodResult result) async {
+    await _ref.read(markerRepositoryProvider).save(result);
+    _refreshMarkers();
+  }
+
+  Future<void> saveBloodDraw(
+      DateTime takenOn, Map<BloodMarker, double> values) async {
+    if (values.isEmpty) return;
+    await _ref.read(markerRepositoryProvider).saveDraw(takenOn, values);
+    _refreshMarkers();
+  }
+
+  Future<void> deleteBloodResult(int id) async {
+    await _ref.read(markerRepositoryProvider).delete(id);
+    _refreshMarkers();
+  }
+
   Future<void> savePresets(List<DrinkPreset> presets) async {
     await _ref.read(settingsRepositoryProvider).savePresets(presets);
     _ref.invalidate(drinkPresetsProvider);
@@ -260,6 +316,8 @@ final FutureProvider<List<DaySummary>> historyProvider =
       await ref.watch(logRepositoryProvider).between(from, today);
   final List<WaterEntry> waters =
       await ref.watch(waterRepositoryProvider).between(from, today);
+  final ClinicalAssessment assessment =
+      await ref.watch(assessmentProvider.future);
 
   final Map<String, List<LogEntry>> entriesByDay = <String, List<LogEntry>>{};
   for (final LogEntry e in entries) {
@@ -280,6 +338,7 @@ final FutureProvider<List<DaySummary>> historyProvider =
       profile: profile,
       entries: entriesByDay[key] ?? const <LogEntry>[],
       waterEntries: watersByDay[key] ?? const <WaterEntry>[],
+      assessment: assessment,
     );
   });
 });

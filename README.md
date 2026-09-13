@@ -94,10 +94,47 @@ Saturated fat ≤10% of energy, trans fat ≤1%, added sugar ≤10% (WHO), sodiu
 ≤2000 mg, cholesterol ≤300 mg. Micronutrient targets are adult RDAs adjusted
 for your sex and age.
 
-**Any of these can be overridden.** When you have a blood report telling you
-to cap sodium at 1500 mg or push fibre to 40 g, open **All nutrients**, tap
-the nutrient, and set your own figure. Overrides always win over the formula
-and are labelled as yours.
+---
+
+## Blood results
+
+The defaults above are general-population figures. **Profile → Blood report**
+takes the numbers off your own panel and moves the ones your results justify.
+
+Targets always follow your **most recent draw**, so re-testing in three months
+moves them on its own — nothing needs reconfiguring, and a result that comes
+back normal drops the adjustment it was causing.
+
+| Result | What changes |
+|---|---|
+| LDL over 100, or non-HDL over 130 | Saturated fat 10% → 7% of energy; cholesterol 300 → 200 mg; fibre floor of 30 g |
+| HDL under 50 | Added sugar 10% → 5% of energy; omega-3 raised to 2 g |
+| Triglycerides over 150 | Added sugar → 5%; omega-3 → 2 g; alcohol → 0 |
+| HbA1c 5.7 or over | Added sugar → 5%; fibre floor of 30 g |
+| Vitamin D under 20 / under 30 | Dietary vitamin D → 25 mcg / 20 mcg |
+| B12 under 400 | B12 target 2.4 → 4 mcg |
+| AST or ALT above range | Alcohol limit → 0 |
+| Uric acid over 7 | +500 ml on the daily water target; alcohol → 0 |
+| eGFR under 90 | Protein capped at 0.8 g/kg; sodium → 1500 mg; potassium and phosphorus become limits |
+| Haemoglobin or ferritin low | Iron ×1.5; vitamin C → 200 mg to aid absorption |
+
+Three rules the app holds to here:
+
+- **It never pretends a medical problem is a diet problem.** Raised liver
+  enzymes, a vitamin D deficiency, an out-of-range TSH — these are shown as
+  *"Show these to a doctor"*, with a standing prompt on the diary, and the
+  app makes only the one change it can honestly justify (alcohol to zero).
+  It will not imply that eating differently fixes them.
+- **An adjustment only ever moves a target in the safe direction.** The
+  kidney protein ceiling lowers a high target and never raises a low one; the
+  fibre floor lifts a low target and never lowers a high one.
+- **Precedence is explicit**: population default, then your blood results,
+  then anything you set by hand. Tap any nutrient in **All nutrients** to see
+  which of the three produced the number in front of you, and why.
+
+Only markers you actually enter are considered — a blank field records nothing,
+which is different from recording a zero, and an unrecorded marker never
+produces a flag.
 
 ---
 
@@ -169,6 +206,9 @@ within a week.
 ## Your data
 
 Local only, on one device. There is no account and nothing leaves the phone.
+That includes your blood results: they are typed into the app, stored in its
+database on the handset, and never committed to this repository or sent
+anywhere.
 
 That also means **an export is your only backup**. Profile → Export a backup
 produces a JSON document with everything in it — profile, foods, every logged
@@ -182,7 +222,7 @@ transaction, so a malformed file leaves your existing data untouched.
 ```
 lib/
   core/          dates, number and unit formatting, theme
-  domain/        pure Dart: nutrients, targets, profile, day summaries
+  domain/        pure Dart: nutrients, targets, profile, blood markers
   data/          SQLite schema and repositories
   services/      notifications, backup
   state/         Riverpod providers and mutations

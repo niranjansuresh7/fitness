@@ -13,6 +13,7 @@ import 'package:hydrafuel/domain/nutrients.dart';
 import 'package:hydrafuel/domain/profile.dart';
 import 'package:hydrafuel/services/notification_service.dart';
 import 'package:hydrafuel/state/providers.dart';
+import 'package:hydrafuel/ui/blood_draw_entry_page.dart';
 import 'package:hydrafuel/ui/food_edit_page.dart';
 import 'package:hydrafuel/ui/log_food_page.dart';
 import 'package:hydrafuel/ui/profile_page.dart';
@@ -369,6 +370,56 @@ void main() {
     expect(day.entries, hasLength(1), reason: 'edited, not duplicated');
     expect(day.entries.single.grams, 100.0);
     expect(day.consumed(Nutrient.energy), closeTo(120.0, 1e-9));
+  });
+
+  testWidgets('entering blood results moves the targets and flags the doctor',
+      (tester) async {
+    final ProviderContainer container = await boot(tester);
+
+    await tester.tap(find.text('Profile').last);
+    await tester.pumpAndSettle();
+    await tapIn(tester, ProfilePage, find.text('Blood report'));
+
+    expect(find.text('No results recorded yet.'), findsOneWidget);
+    // FilledButton.icon builds a private subclass, so byType would miss the
+    // empty-state button. The floating action button is the real entry point.
+    await tapVisible(
+        tester, find.widgetWithText(FloatingActionButton, 'Add results'));
+
+    // Four numbers off the panel.
+    await typeIn(tester, BloodDrawEntryPage,
+        find.widgetWithText(TextField, 'LDL cholesterol'), '141');
+    await typeIn(tester, BloodDrawEntryPage,
+        find.widgetWithText(TextField, 'HDL cholesterol'), '36');
+    await typeIn(tester, BloodDrawEntryPage,
+        find.widgetWithText(TextField, 'AST (SGOT)'), '308');
+    await typeIn(tester, BloodDrawEntryPage,
+        find.widgetWithText(TextField, 'Vitamin D (25-OH)'), '16.5');
+
+    await tapVisible(tester, find.textContaining('Save 4 results'));
+
+    // The report separates what food can move from what it cannot.
+    expect(find.text('Show these to a doctor'), findsOneWidget);
+    expect(find.text('What this changed'), findsOneWidget);
+
+    // Saturated fat is now 7% of energy, not 10%.
+    final DaySummary day =
+        await container.read(daySummaryProvider(dayKey(DateTime.now())).future);
+    final double energy = day.targets.energyKcal;
+    expect(day.targets.amountFor(Nutrient.satFat),
+        closeTo(energy * 0.07 / 9, 0.01));
+    expect(day.targets.amountFor(Nutrient.cholesterol), 200);
+    expect(day.targets.amountFor(Nutrient.vitaminD), 25);
+    expect(day.assessment.needsDoctor, isTrue);
+
+    // And the diary carries a standing prompt about it.
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Today').last);
+    await tester.pumpAndSettle();
+    // Raised liver enzymes and vitamin D deficiency are both medical, so the
+    // prompt aggregates rather than naming one.
+    expect(find.text('2 results need a doctor'), findsOneWidget);
   });
 
   testWidgets('a nutrient override survives into the targets screen',

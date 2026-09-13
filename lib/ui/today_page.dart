@@ -4,12 +4,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/dates.dart';
 import '../core/formatting.dart';
 import '../core/theme.dart';
+import '../domain/clinical_flags.dart';
 import '../domain/daily_summary.dart';
 import '../domain/food_item.dart';
 import '../domain/log_entry.dart';
 import '../domain/nutrients.dart';
 import '../domain/targets.dart';
 import '../state/providers.dart';
+import 'blood_report_page.dart';
 import 'log_food_page.dart';
 import 'targets_page.dart';
 import 'widgets/nutrient_bar.dart';
@@ -88,6 +90,10 @@ class _TodayBody extends ConsumerWidget {
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
       children: <Widget>[
+        if (day.assessment.needsDoctor) ...<Widget>[
+          _MedicalPrompt(assessment: day.assessment),
+          const SizedBox(height: 14),
+        ],
         _WaterStrip(day: day, onTap: onOpenWater),
         const SizedBox(height: 14),
         _EnergyCard(day: day),
@@ -100,6 +106,64 @@ class _TodayBody extends ConsumerWidget {
         const SizedBox(height: 14),
         _MealsCard(day: day),
       ],
+    );
+  }
+}
+
+/// A standing link to the blood results that need a doctor rather than a diet
+/// change. Deliberately not dismissible: it stops appearing when the result
+/// that raised it is replaced by a newer, normal one.
+class _MedicalPrompt extends StatelessWidget {
+  const _MedicalPrompt({required this.assessment});
+
+  final ClinicalAssessment assessment;
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final List<ClinicalFinding> medical = assessment.medical;
+
+    return Card(
+      color: AppTheme.danger.withValues(alpha: 0.09),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(18),
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute<void>(builder: (_) => const BloodReportPage()),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Row(
+            children: <Widget>[
+              const Icon(Icons.medical_services_outlined,
+                  color: AppTheme.danger, size: 20),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      medical.length == 1
+                          ? medical.single.flag.label
+                          : '${medical.length} results need a doctor',
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: AppTheme.danger,
+                      ),
+                    ),
+                    Text(
+                      'Not something this app can fix with food.',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_right, size: 18),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

@@ -1,3 +1,4 @@
+import 'clinical_flags.dart';
 import 'log_entry.dart';
 import 'nutrients.dart';
 import 'nutrition.dart';
@@ -12,6 +13,7 @@ class DaySummary {
     required this.profile,
     required this.entries,
     required this.waterEntries,
+    this.assessment = ClinicalAssessment.none,
   })  : totals = NutritionFacts.sum(entries.map((LogEntry e) => e.nutrition)),
         waterDrunkMl = waterEntries.fold<double>(
             0.0, (double sum, WaterEntry w) => sum + w.volumeMl);
@@ -20,6 +22,9 @@ class DaySummary {
   final UserProfile profile;
   final List<LogEntry> entries;
   final List<WaterEntry> waterEntries;
+
+  /// What the latest blood results concluded. Empty until any are recorded.
+  final ClinicalAssessment assessment;
 
   /// Sum of every logged entry. Exact — no intermediate rounding.
   final NutritionFacts totals;
@@ -41,6 +46,7 @@ class DaySummary {
     profile,
     date: date,
     foodWaterMl: waterFromFoodMl,
+    assessment: assessment,
   );
 
   double consumed(Nutrient n) => totals[n];

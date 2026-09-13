@@ -4,11 +4,14 @@ import 'package:share_plus/share_plus.dart';
 
 import '../core/formatting.dart';
 import '../core/theme.dart';
+import '../domain/blood_marker.dart';
+import '../domain/clinical_flags.dart';
 import '../domain/nutrients.dart';
 import '../domain/profile.dart';
 import '../domain/targets.dart';
 import '../services/notification_service.dart';
 import '../state/providers.dart';
+import 'blood_report_page.dart';
 import 'reminder_schedule_page.dart';
 import 'targets_page.dart';
 import 'widgets/number_field.dart';
@@ -31,6 +34,8 @@ class ProfilePage extends ConsumerWidget {
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
         children: <Widget>[
           _BodySection(profile: p, save: save),
+          const SizedBox(height: 14),
+          const _BloodReportLink(),
           const SizedBox(height: 14),
           _GoalSection(profile: p, save: save),
           const SizedBox(height: 14),
@@ -129,6 +134,52 @@ class _BodySection extends StatelessWidget {
             },
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _BloodReportLink extends ConsumerWidget {
+  const _BloodReportLink();
+
+  static String _summary(DateTime drawn, int adjusted, bool needsDoctor) {
+    final String changes = adjusted == 0
+        ? 'no target changes'
+        : '$adjusted target ${adjusted == 1 ? 'change' : 'changes'}';
+    final String doctor = needsDoctor ? ' · see a doctor' : '';
+    return '${Fmt.date(drawn)} · $changes$doctor';
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final ThemeData theme = Theme.of(context);
+    final ClinicalAssessment assessment =
+        ref.watch(assessmentProvider).valueOrNull ?? ClinicalAssessment.none;
+    final MarkerSnapshot snapshot =
+        ref.watch(markerSnapshotProvider).valueOrNull ?? MarkerSnapshot.empty;
+
+    final DateTime? drawn = snapshot.lastDrawDate;
+    final int adjusted = assessment.nutritional.length;
+
+    return Card(
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        leading: Icon(
+          Icons.science_outlined,
+          color: assessment.needsDoctor ? AppTheme.danger : AppTheme.water,
+        ),
+        title: const Text('Blood report',
+            style: TextStyle(fontWeight: FontWeight.w700)),
+        subtitle: Text(
+          drawn == null
+              ? 'Add your results and the targets follow them'
+              : _summary(drawn, adjusted, assessment.needsDoctor),
+          style: theme.textTheme.bodySmall,
+        ),
+        trailing: const Icon(Icons.chevron_right),
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute<void>(builder: (_) => const BloodReportPage()),
+        ),
       ),
     );
   }
@@ -693,6 +744,7 @@ class _DataSection extends ConsumerWidget {
       ref.invalidate(daySummaryProvider);
       ref.invalidate(historyProvider);
       ref.invalidate(drinkPresetsProvider);
+      ref.invalidate(bloodResultsProvider);
       if (context.mounted) {
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text('$result')));

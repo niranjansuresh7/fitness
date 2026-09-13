@@ -145,7 +145,11 @@ class _NutrientDetailSheet extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
                     Text(
-                      t.isOverride ? 'Your override' : 'How this is worked out',
+                      t.isOverride
+                          ? 'Your override'
+                          : t.isClinical
+                              ? 'Set by your blood report'
+                              : 'How this is worked out',
                       style: theme.textTheme.labelMedium
                           ?.copyWith(fontWeight: FontWeight.w700),
                     ),

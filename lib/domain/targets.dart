@@ -1,3 +1,4 @@
+import 'clinical_flags.dart';
 import 'nutrients.dart';
 import 'nutrition.dart';
 import 'profile.dart';
@@ -25,6 +26,7 @@ class NutrientTarget {
     required this.kind,
     required this.rationale,
     this.isOverride = false,
+    this.isClinical = false,
   });
 
   final Nutrient nutrient;
@@ -34,6 +36,10 @@ class NutrientTarget {
 
   /// True when this came from the user's own override rather than a formula.
   final bool isOverride;
+
+  /// True when a blood result moved this target off its general-population
+  /// default.
+  final bool isClinical;
 
   /// Progress towards this target as a fraction (may exceed 1.0).
   double progressFrom(double consumed) => amount <= 0 ? 0.0 : consumed / amount;
@@ -56,6 +62,7 @@ class WaterTarget {
     required this.exerciseMl,
     required this.climateMl,
     required this.foodWaterCreditMl,
+    this.clinicalMl = 0.0,
   });
 
   /// Body-mass baseline: `weightKg * mlPerKg`.
@@ -67,12 +74,15 @@ class WaterTarget {
   /// Heat and humidity allowance.
   final double climateMl;
 
+  /// Extra fluid called for by a blood result, such as raised uric acid.
+  final double clinicalMl;
+
   /// Water obtained from food that is deducted from the drinking goal.
   /// Zero unless the user opted in.
   final double foodWaterCreditMl;
 
   /// Total water the body needs from all sources.
-  double get totalWaterMl => baselineMl + exerciseMl + climateMl;
+  double get totalWaterMl => baselineMl + exerciseMl + climateMl + clinicalMl;
 
   /// What must actually be drunk. Floored at 1000 ml so a food-water credit can
   /// never drive the goal down to something unsafe.
@@ -95,6 +105,7 @@ class DailyTargets {
     required this.energyAdjustmentKcal,
     required this.water,
     required this.nutrients,
+    this.assessment = ClinicalAssessment.none,
   });
 
   final DateTime date;
@@ -114,6 +125,9 @@ class DailyTargets {
   final WaterTarget water;
 
   final Map<Nutrient, NutrientTarget> nutrients;
+
+  /// What the latest blood results concluded, if any have been recorded.
+  final ClinicalAssessment assessment;
 
   NutrientTarget? operator [](Nutrient n) => nutrients[n];
 
@@ -185,12 +199,24 @@ class TargetCalculator {
     return tdee(p) + energyAdjustment(p);
   }
 
-  static WaterTarget water(UserProfile p, {double foodWaterMl = 0.0}) {
+  /// Extra daily fluid when uric acid is raised. Dilute urine lowers the risk
+  /// of urate crystallising, and this is the one blood result with a direct,
+  /// uncontroversial fluid implication.
+  static const double uricAcidExtraWaterMl = 500.0;
+
+  static WaterTarget water(
+    UserProfile p, {
+    double foodWaterMl = 0.0,
+    ClinicalAssessment assessment = ClinicalAssessment.none,
+  }) {
     return WaterTarget(
       baselineMl: p.weightKg * p.waterMlPerKg,
       exerciseMl: p.dailyExerciseMinutes * p.waterMlPerExerciseMinute,
       climateMl: p.climate.extraWaterMl.toDouble(),
       foodWaterCreditMl: p.countFoodWaterTowardsTarget ? foodWaterMl : 0.0,
+      clinicalMl: assessment.has(ClinicalFlag.raisedUricAcid)
+          ? uricAcidExtraWaterMl
+          : 0.0,
     );
   }
 
@@ -202,6 +228,7 @@ class TargetCalculator {
     UserProfile p, {
     required DateTime date,
     double foodWaterMl = 0.0,
+    ClinicalAssessment assessment = ClinicalAssessment.none,
   }) {
     final double bmrKcal = bmr(p);
     final double tdeeKcal = tdee(p);
@@ -332,6 +359,9 @@ class TargetCalculator {
     put(Nutrient.caffeine, 400.0, TargetKind.limit,
         'Generally recognised safe ceiling for healthy adults.');
 
+    // --- Blood results move the defaults ------------------------------------
+    _applyClinical(targets, assessment, p, energy);
+
     // --- User overrides win -------------------------------------------------
     for (final MapEntry<Nutrient, double> e in p.customTargets.entries) {
       final NutrientTarget? existing = targets[e.key];
@@ -350,9 +380,144 @@ class TargetCalculator {
       tdeeKcal: tdeeKcal,
       energyKcal: targets[Nutrient.energy]?.amount ?? energy,
       energyAdjustmentKcal: adjustment,
-      water: water(p, foodWaterMl: foodWaterMl),
+      water: water(p, foodWaterMl: foodWaterMl, assessment: assessment),
       nutrients: targets,
+      assessment: assessment,
     );
+  }
+
+  /// Move targets off their general-population defaults where a blood result
+  /// justifies it.
+  ///
+  /// Runs after the formulas and before the user's own overrides, so the order
+  /// of precedence is: population default, then your blood results, then
+  /// anything you set by hand.
+  static void _applyClinical(
+    Map<Nutrient, NutrientTarget> targets,
+    ClinicalAssessment assessment,
+    UserProfile p,
+    double energy,
+  ) {
+    if (assessment.isEmpty) return;
+
+    final Map<ClinicalFlag, String> why = <ClinicalFlag, String>{
+      for (final ClinicalFinding f in assessment.findings) f.flag: f.detail,
+    };
+
+    double current(Nutrient n) => targets[n]?.amount ?? 0.0;
+
+    void set(Nutrient n, double amount, TargetKind kind, ClinicalFlag flag) {
+      targets[n] = NutrientTarget(
+        nutrient: n,
+        amount: amount,
+        kind: kind,
+        rationale: '${flag.label}. ${why[flag] ?? ''}',
+        isClinical: true,
+      );
+    }
+
+    bool has(ClinicalFlag f) => assessment.has(f);
+
+    // --- Lipids -------------------------------------------------------------
+    if (has(ClinicalFlag.raisedLdl)) {
+      // 7% of energy rather than 10%, the standard step for raised LDL.
+      set(Nutrient.satFat, energy * 0.07 / AtwaterFactors.fat, TargetKind.limit,
+          ClinicalFlag.raisedLdl);
+      set(Nutrient.cholesterol, 200, TargetKind.limit, ClinicalFlag.raisedLdl);
+      // Fibre floor of 30 g; below that the LDL-lowering effect is small.
+      if (current(Nutrient.fiber) < 30) {
+        set(Nutrient.fiber, 30, TargetKind.goal, ClinicalFlag.raisedLdl);
+      }
+    }
+
+    if (has(ClinicalFlag.lowHdl)) {
+      set(Nutrient.addedSugar, energy * 0.05 / AtwaterFactors.digestibleCarb,
+          TargetKind.limit, ClinicalFlag.lowHdl);
+      if (current(Nutrient.omega3) < 2.0) {
+        set(Nutrient.omega3, 2.0, TargetKind.goal, ClinicalFlag.lowHdl);
+      }
+    }
+
+    if (has(ClinicalFlag.raisedTriglycerides)) {
+      set(Nutrient.addedSugar, energy * 0.05 / AtwaterFactors.digestibleCarb,
+          TargetKind.limit, ClinicalFlag.raisedTriglycerides);
+      if (current(Nutrient.omega3) < 2.0) {
+        set(Nutrient.omega3, 2.0, TargetKind.goal,
+            ClinicalFlag.raisedTriglycerides);
+      }
+      set(Nutrient.alcohol, 0, TargetKind.limit,
+          ClinicalFlag.raisedTriglycerides);
+    }
+
+    // --- Blood sugar ---------------------------------------------------------
+    for (final ClinicalFlag f in <ClinicalFlag>[
+      ClinicalFlag.prediabetes,
+      ClinicalFlag.diabetes
+    ]) {
+      if (!has(f)) continue;
+      set(Nutrient.addedSugar, energy * 0.05 / AtwaterFactors.digestibleCarb,
+          TargetKind.limit, f);
+      if (current(Nutrient.fiber) < 30) {
+        set(Nutrient.fiber, 30, TargetKind.goal, f);
+      }
+    }
+
+    // --- Vitamins -------------------------------------------------------------
+    if (has(ClinicalFlag.vitaminDDeficient)) {
+      // 25 mcg (1000 IU) is the upper end of what diet and sensible sun can
+      // reasonably provide. Correcting a deficiency needs a prescribed dose.
+      set(Nutrient.vitaminD, 25, TargetKind.goal,
+          ClinicalFlag.vitaminDDeficient);
+    } else if (has(ClinicalFlag.vitaminDInsufficient)) {
+      set(Nutrient.vitaminD, 20, TargetKind.goal,
+          ClinicalFlag.vitaminDInsufficient);
+    }
+
+    if (has(ClinicalFlag.b12Deficient)) {
+      set(Nutrient.vitaminB12, 6.0, TargetKind.goal, ClinicalFlag.b12Deficient);
+    } else if (has(ClinicalFlag.b12BelowOptimal)) {
+      set(Nutrient.vitaminB12, 4.0, TargetKind.goal,
+          ClinicalFlag.b12BelowOptimal);
+    }
+
+    // --- Liver ----------------------------------------------------------------
+    if (has(ClinicalFlag.raisedLiverEnzymes)) {
+      set(Nutrient.alcohol, 0, TargetKind.limit,
+          ClinicalFlag.raisedLiverEnzymes);
+    }
+
+    // --- Kidney ---------------------------------------------------------------
+    if (has(ClinicalFlag.raisedUricAcid)) {
+      set(Nutrient.alcohol, 0, TargetKind.limit, ClinicalFlag.raisedUricAcid);
+    }
+
+    if (has(ClinicalFlag.reducedKidneyFunction)) {
+      // 0.8 g/kg is the usual ceiling once filtration is reduced. Only ever
+      // lowers the target — it never raises someone's protein.
+      final double ceiling = 0.8 * p.weightKg;
+      if (current(Nutrient.protein) > ceiling) {
+        set(Nutrient.protein, ceiling, TargetKind.limit,
+            ClinicalFlag.reducedKidneyFunction);
+      }
+      set(Nutrient.sodium, 1500, TargetKind.limit,
+          ClinicalFlag.reducedKidneyFunction);
+      set(Nutrient.potassium, 2500, TargetKind.limit,
+          ClinicalFlag.reducedKidneyFunction);
+      set(Nutrient.phosphorus, 800, TargetKind.limit,
+          ClinicalFlag.reducedKidneyFunction);
+    }
+
+    // --- Iron ------------------------------------------------------------------
+    for (final ClinicalFlag f in <ClinicalFlag>[
+      ClinicalFlag.anaemia,
+      ClinicalFlag.lowFerritin
+    ]) {
+      if (!has(f)) continue;
+      set(Nutrient.iron, current(Nutrient.iron) * 1.5, TargetKind.goal, f);
+      if (current(Nutrient.vitaminC) < 200) {
+        set(Nutrient.vitaminC, 200, TargetKind.goal, f);
+      }
+    }
   }
 
   /// Convenience: how much of [n] is left for the day.
