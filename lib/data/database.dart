@@ -11,17 +11,20 @@ class AppDatabase {
   final Database db;
 
   static const int _version = 1;
-  static AppDatabase? _instance;
 
-  static Future<AppDatabase> open({String fileName = 'hydrafuel.db'}) async {
-    final AppDatabase? existing = _instance;
-    if (existing != null) return existing;
-
-    final String dir = await getDatabasesPath();
-    final String path = p.join(dir, fileName);
+  /// Opens the database, creating it on first run.
+  ///
+  /// [path] is only for tests, which pass an in-memory path so each case
+  /// starts from a clean schema.
+  static Future<AppDatabase> open({
+    String fileName = 'hydrafuel.db',
+    String? path,
+  }) async {
+    final String location =
+        path ?? p.join(await getDatabasesPath(), fileName);
 
     final Database db = await openDatabase(
-      path,
+      location,
       version: _version,
       onConfigure: (Database d) async {
         await d.execute('PRAGMA foreign_keys = ON');
@@ -35,9 +38,7 @@ class AppDatabase {
       },
     );
 
-    final AppDatabase wrapper = AppDatabase._(db);
-    _instance = wrapper;
-    return wrapper;
+    return AppDatabase._(db);
   }
 
   static Future<void> _createSchema(Database d) async {
@@ -101,8 +102,5 @@ class AppDatabase {
     await batch.commit(noResult: true);
   }
 
-  Future<void> close() async {
-    await db.close();
-    _instance = null;
-  }
+  Future<void> close() => db.close();
 }

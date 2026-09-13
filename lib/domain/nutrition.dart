@@ -63,6 +63,22 @@ class NutritionFacts {
     return NutritionFacts(out);
   }
 
+  /// Re-express values that were measured over [basisGrams] as per-100 g
+  /// values.
+  ///
+  /// Packets state nutrition per serving, per 100 ml, or per 100 g, and the
+  /// only way to compare or sum them is to normalise once on the way in.
+  /// `basisGrams` is the weight in grams that the entered figures describe:
+  /// 100 for a per-100 g label, `100 * density` for a per-100 ml one, and the
+  /// serving weight for a per-serving one.
+  static NutritionFacts toPer100g(
+    NutritionFacts measured, {
+    required double basisGrams,
+  }) {
+    if (basisGrams <= 0) return empty;
+    return measured.scaledBy(100.0 / basisGrams);
+  }
+
   static NutritionFacts sum(Iterable<NutritionFacts> parts) {
     final Map<Nutrient, double> out = <Nutrient, double>{};
     for (final NutritionFacts p in parts) {
