@@ -126,8 +126,6 @@ class NotificationService {
         _nextOccurrenceOf(slot.minuteOfDay),
         _details(),
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-        uiLocalNotificationDateInterpretation:
-            UILocalNotificationDateInterpretation.absoluteTime,
         // Repeat every day at this time.
         matchDateTimeComponents: DateTimeComponents.time,
       );

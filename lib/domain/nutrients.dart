@@ -36,7 +36,8 @@ enum Nutrient {
   energy('energy', 'Energy', NutrientUnit.kcal, NutrientGroup.energy, 0),
 
   protein('protein', 'Protein', NutrientUnit.gram, NutrientGroup.macro, 1),
-  carbs('carbs', 'Carbohydrate', NutrientUnit.gram, NutrientGroup.macro, 1),
+  carbs('carbs', 'Carbohydrate', NutrientUnit.gram, NutrientGroup.macro, 1,
+      short: 'Carbs'),
   fat('fat', 'Fat', NutrientUnit.gram, NutrientGroup.macro, 1),
 
   fiber('fiber', 'Fibre', NutrientUnit.gram, NutrientGroup.carbQuality, 1),
@@ -82,10 +83,23 @@ enum Nutrient {
       'caffeine', 'Caffeine', NutrientUnit.milligram, NutrientGroup.other, 0),
   alcohol('alcohol', 'Alcohol', NutrientUnit.gram, NutrientGroup.other, 1);
 
-  const Nutrient(this.key, this.label, this.unit, this.group, this.decimals);
+  const Nutrient(
+    this.key,
+    this.label,
+    this.unit,
+    this.group,
+    this.decimals, {
+    String? short,
+  }) : _short = short;
 
   final String key;
   final String label;
+
+  final String? _short;
+
+  /// A compact name, for the stat rows where three or four of these share a
+  /// phone's width. Falls back to [label] when no shorter form is needed.
+  String get shortLabel => _short ?? label;
   final NutrientUnit unit;
   final NutrientGroup group;
 

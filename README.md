@@ -16,30 +16,105 @@ Built around two ideas:
 
 ## Getting it onto your phone
 
-You need a Mac with Xcode and the Flutter SDK installed
+**This repository holds only the Dart source.** There is no `.xcodeproj` in it
+— the `ios/` folder is generated, not committed. Opening the repository folder
+in Xcode will not give you anything runnable until you run the bootstrap script
+below.
+
+You need a Mac with **Xcode** and the **Flutter SDK**
 ([install guide](https://docs.flutter.dev/get-started/install/macos)).
 
+### 1. Prepare the phone (first time only)
+
+On the iPhone:
+
+- **Settings → Privacy & Security → Developer Mode → On**, then restart the
+  phone. Required on iOS 16 and later; without it the phone will not appear as
+  a target at all.
+- Unlock it, plug it into the Mac, and tap **Trust This Computer**.
+
+### 2. Generate the project and build
+
+From Terminal, in the repository folder:
+
 ```bash
-git clone <this repo>
-cd fitness
-./tool/bootstrap.sh        # generates ios/ and android/, restores lib/, runs pub get
-flutter test               # 100+ tests, all offline
-flutter devices            # plug the iPhone in and check it appears
-flutter run                # builds, signs and installs
+flutter doctor              # fix anything it flags first
+./tool/bootstrap.sh         # generates ios/ and android/, keeps the source
+flutter test                # the full suite, no device needed
+flutter devices             # your iPhone should be listed
+flutter run                 # builds, signs and installs
 ```
 
-The first `flutter run` will ask Xcode for a signing identity. Open
-`ios/Runner.xcworkspace`, select the **Runner** target → **Signing &
-Capabilities**, and pick your Apple ID.
+`bootstrap.sh` runs `flutter create` to produce the platform folders, which
+would otherwise overwrite `lib/main.dart` and `pubspec.yaml` with its own
+template — so it backs the source up first and restores it afterwards. If
+anything fails midway it puts the source back before exiting. It also patches
+`ios/Runner/AppDelegate.swift` to set the notification-centre delegate, without
+which a reminder that fires while the app is open is delivered silently and
+never appears.
 
-**On signing:** a free Apple ID re-signs apps for 7 days, after which the app
+### 3. Signing
+
+The first `flutter run` will fail if Xcode has no signing identity. Open the
+generated workspace:
+
+```bash
+open ios/Runner.xcworkspace
+```
+
+Select the **Runner** target → **Signing & Capabilities** → set **Team** to
+your Apple ID (add it under Xcode → Settings → Accounts if it is not listed).
+
+If Xcode says the bundle identifier is already taken, regenerate with your own
+prefix and try again:
+
+```bash
+ORG=com.yourname ./tool/bootstrap.sh
+```
+
+Then run `flutter run` again.
+
+### 4. Trust the app on the phone
+
+The first install will refuse to launch with an untrusted-developer message.
+On the iPhone: **Settings → General → VPN & Device Management →** your Apple
+ID **→ Trust**. Launch it again after that.
+
+**On signing:** a free Apple ID signs apps for 7 days, after which the app
 stops launching until you `flutter run` again. A paid Apple Developer account
 ($99/year) extends that to a year. Either works; the free one just needs a
 weekly reconnect.
 
-Once installed it runs entirely offline. Both your iPhone 17 and iPhone 11 can
+Once installed it runs entirely offline. Both an iPhone 17 and an iPhone 11 can
 have it, but they keep separate data — there is no sync. Use **Profile →
 Export a backup** to move data between them.
+
+---
+
+## Screens
+
+| Today | Water | All nutrients |
+|:--:|:--:|:--:|
+| <img src="tool/screenshots/shots/01-today.png" width="240"> | <img src="tool/screenshots/shots/03-water.png" width="240"> | <img src="tool/screenshots/shots/05-all-nutrients.png" width="240"> |
+| Energy ring shows what is **left**, not what is eaten. The water strip carries live pace. | Ring, quick-add and the target's arithmetic, all on one screen. | Every tracked nutrient against its target; tap one for the reasoning. |
+
+| Blood report | Logging food | Reminder schedule |
+|:--:|:--:|:--:|
+| <img src="tool/screenshots/shots/07-blood-report.png" width="240"> | <img src="tool/screenshots/shots/10-log-amount.png" width="240"> | <img src="tool/screenshots/shots/13-reminder-schedule.png" width="240"> |
+| What food can move, kept separate from what needs a doctor. | Exact grams in, full nutrition preview before you commit. | Every reminder and its exact wording, so they can be checked rather than trusted. |
+
+The rest are in [`tool/screenshots/shots/`](tool/screenshots/shots/).
+
+These are renders of the real widgets, not mockups. Regenerate them with:
+
+```bash
+flutter test tool/screenshots/app_screenshots_test.dart --update-goldens
+```
+
+The harness seeds a half-lived day — water logged, two meals in, a blood panel
+recorded — and captures each screen at iPhone dimensions. It lives outside
+`test/` on purpose: golden rendering differs between machines, so running it in
+CI would fail for reasons that have nothing to do with the code.
 
 ---
 
