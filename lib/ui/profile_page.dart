@@ -677,10 +677,12 @@ class _DataSection extends ConsumerWidget {
             onPressed: () async {
               final String json =
                   await ref.read(backupServiceProvider).export();
-              await Share.share(
-                json,
-                subject:
-                    'HydraFuel backup ${DateTime.now().toIso8601String().split('T').first}',
+              await SharePlus.instance.share(
+                ShareParams(
+                  text: json,
+                  subject: 'HydraFuel backup '
+                      '${DateTime.now().toIso8601String().split('T').first}',
+                ),
               );
             },
           ),
