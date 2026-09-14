@@ -389,7 +389,7 @@ class _LogAmountPageState extends ConsumerState<LogAmountPage> {
                     ),
                     for (final Nutrient n in Nutrient.macros)
                       StatTile(
-                        label: n.label,
+                        label: n.shortLabel,
                         value: Fmt.amount(n, result[n]),
                         color: colorForNutrient(n, context),
                       ),

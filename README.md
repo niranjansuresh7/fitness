@@ -43,6 +43,33 @@ Export a backup** to move data between them.
 
 ---
 
+## Screens
+
+| Today | Water | All nutrients |
+|:--:|:--:|:--:|
+| <img src="tool/screenshots/shots/01-today.png" width="240"> | <img src="tool/screenshots/shots/03-water.png" width="240"> | <img src="tool/screenshots/shots/05-all-nutrients.png" width="240"> |
+| Energy ring shows what is **left**, not what is eaten. The water strip carries live pace. | Ring, quick-add and the target's arithmetic, all on one screen. | Every tracked nutrient against its target; tap one for the reasoning. |
+
+| Blood report | Logging food | Reminder schedule |
+|:--:|:--:|:--:|
+| <img src="tool/screenshots/shots/07-blood-report.png" width="240"> | <img src="tool/screenshots/shots/10-log-amount.png" width="240"> | <img src="tool/screenshots/shots/13-reminder-schedule.png" width="240"> |
+| What food can move, kept separate from what needs a doctor. | Exact grams in, full nutrition preview before you commit. | Every reminder and its exact wording, so they can be checked rather than trusted. |
+
+The rest are in [`tool/screenshots/shots/`](tool/screenshots/shots/).
+
+These are renders of the real widgets, not mockups. Regenerate them with:
+
+```bash
+flutter test tool/screenshots/app_screenshots_test.dart --update-goldens
+```
+
+The harness seeds a half-lived day — water logged, two meals in, a blood panel
+recorded — and captures each screen at iPhone dimensions. It lives outside
+`test/` on purpose: golden rendering differs between machines, so running it in
+CI would fail for reasons that have nothing to do with the code.
+
+---
+
 ## How the numbers are worked out
 
 Every target in the app can be traced back to a formula. Tap any nutrient on

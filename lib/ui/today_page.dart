@@ -352,7 +352,7 @@ class _MacroCard extends StatelessWidget {
             tiles: <Widget>[
               for (final Nutrient n in Nutrient.macros)
                 StatTile(
-                  label: n.label,
+                  label: n.shortLabel,
                   value: Fmt.amount(n, day.remaining(n)),
                   caption: 'left',
                   color: colorForNutrient(n, context),

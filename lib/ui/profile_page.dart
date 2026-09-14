@@ -327,7 +327,7 @@ class _ResultsCard extends StatelessWidget {
             tiles: <Widget>[
               for (final Nutrient n in Nutrient.macros)
                 StatTile(
-                  label: n.label,
+                  label: n.shortLabel,
                   value: Fmt.amount(
                     n,
                     TargetCalculator.build(profile, date: DateTime.now())
@@ -564,8 +564,8 @@ class _ReminderSection extends ConsumerWidget {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                         content: Text(
-                          'Notifications are blocked. Turn them on in '
-                          'iOS Settings → Notifications → HydraFuel.',
+                          'Notifications are blocked. Turn them on in the '
+                          'iOS Settings app, under Notifications, HydraFuel.',
                         ),
                       ),
                     );

@@ -324,13 +324,15 @@ class _PresetChip extends StatelessWidget {
                 ),
               ),
             ),
-            Text(
-              preset.label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.center,
-              style: theme.textTheme.labelSmall
-                  ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                preset.label,
+                maxLines: 1,
+                textAlign: TextAlign.center,
+                style: theme.textTheme.labelSmall
+                    ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+              ),
             ),
           ],
         ),
@@ -398,7 +400,7 @@ class _TargetBreakdown extends StatelessWidget {
           row('Drink today', Fmt.volume(w.drinkingTargetMl), bold: true),
           const SizedBox(height: 8),
           Text(
-            'Change any of these inputs in Profile → Water.',
+            'Change any of these inputs in Profile, under Water.',
             style: theme.textTheme.bodySmall
                 ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
           ),
@@ -421,8 +423,8 @@ class _NextReminderCard extends StatelessWidget {
       return SectionCard(
         title: 'Reminders are off',
         child: Text(
-          'Turn them on in Profile → Reminders so the phone nudges you '
-          'through the day.',
+          'Turn them on in Profile, under Water reminders, so the phone '
+          'nudges you through the day.',
           style: theme.textTheme.bodyMedium
               ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
         ),
